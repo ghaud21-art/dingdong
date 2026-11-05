@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>딩동 폰 앱 QR</title>
+<meta name="robots" content="noindex">
+<style>
+:root{--ink:#2f4d7a;--ink-2:#5f7ba6;--accent:#4f86d6;--line:#dbe7f7;--bg:#f5f9ff}
+@media (prefers-color-scheme:dark){:root{--bg:#11152a;--ink:#e4ecff;--ink-2:#a9bbe2;--line:#2a3456}}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;display:grid;place-items:center;background:var(--bg);color:var(--ink);font-family:"Malgun Gothic","Apple SD Gothic Neo","Noto Sans KR",system-ui,sans-serif;text-align:center;padding:24px}
+main{width:min(420px,100%)}
+h1{margin:0 0 4px;font-size:30px;color:var(--accent)}
+p{margin:6px 0;color:var(--ink-2);line-height:1.6}
+img.qr{width:min(320px,80vw);height:auto;border-radius:20px;border:1px solid var(--line);margin:18px 0 10px;background:#fff}
+code{display:block;word-break:break-all;font-size:14px;color:var(--ink);font-weight:700}
+ol{text-align:left;display:inline-block;color:var(--ink-2);font-size:14.5px;margin:14px 0 0;padding-left:20px}
+a.back{display:inline-block;margin-top:18px;color:var(--accent);font-weight:700}
+@media print{body{background:#fff;color:#000}h1,code{color:#000}a.back{display:none}p,ol{color:#333}}
+</style>
+</head>
+<body>
+<main>
+  <h1>딩동 폰 앱</h1>
+  <p>폰 카메라로 찍으면 바로 열려요</p>
+  <img class="qr" src="assets/qr-app.svg" alt="딩동 폰 앱으로 가는 QR 코드" width="320" height="320">
+  <code>https://ghaud21-art.github.io/dingdong/app/</code>
+  <ol><li>PC 딩동 설정 → 구글 연동에서 연결하고 <b>지금 올리기</b>를 한 번 눌러요.</li><li>폰에서 위 QR을 찍고 <b>같은 구글 계정</b>으로 연결해요.</li><li>크롬 메뉴의 "홈 화면에 추가"를 하면 앱처럼 써요.</li></ol>
+  <a class="back" href="./">딩동 소개 페이지로</a>
+</main>
+</body>
+</html>
