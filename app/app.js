@@ -7,7 +7,7 @@
   const SCOPE = 'https://www.googleapis.com/auth/drive.appdata';
   const DOC = 'dingdong-settings.json';
   const KEY = { payload: 'dd.payload', at: 'dd.at', granted: 'dd.granted', tab: 'dd.tab', pending: 'dd.pending', failed: 'dd.failed' };
-  const APP_VER = '2026-11-05 분류'; // 화면 버전(더보기에 표시: 폰이 새 화면을 받았는지 확인용)
+  const APP_VER = '2026-11-05 빠른읽기'; // 화면 버전(더보기에 표시: 폰이 새 화면을 받았는지 확인용)
   const V = window.DDMobile;
   const $ = (s) => document.querySelector(s);
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -76,21 +76,25 @@
   // 자동으로 읽기(앱을 열 때·다시 볼 때·수정 반영 기다릴 때): 로그인 창 없이 읽을 수 있을 때만 읽고, 아니면 "새로고침을 눌러 주세요"로 알린다
   async function autoRefresh() {
     if (S.busy || !ls.get(KEY.granted)) return;
-    if (tokenOk()) return refresh(false);
+    if (tokenOk()) return refresh(false, true);
     if (S.payload && !S.stale) { S.stale = true; draw(); }
   }
-  async function refresh(interactive) {
-    S.busy = true; S.error = ''; S.status = '구글 드라이브에서 읽는 중…'; draw();
+  // quiet=true: 자동 읽기. 화면을 깜박이지 않고, 내용이 달라졌을 때만 다시 그리며, 실패해도 조용히 넘어간다
+  async function refresh(interactive, quiet) {
+    S.busy = true; let changed = true;
+    if (!quiet) { S.error = ''; S.status = '구글 드라이브에서 읽는 중…'; draw(); }
     try {
       const token = await getToken(interactive);
       const text = await fetchBackup(token);
-      if (!text) { S.payload = null; S.error = 'empty'; return; }
+      if (quiet && text && text === ls.get(KEY.payload)) { changed = false; ls.set(KEY.at, new Date().toISOString()); return; }
+      if (!text) { if (quiet) { changed = false; return; } S.payload = null; S.error = 'empty'; return; }
       const payload = V.parseBackup(text);
       S.payload = payload; prune(payload); ls.set(KEY.payload, text); ls.set(KEY.at, new Date().toISOString()); S.offline = false; S.stale = false;
     } catch (e) {
+      if (quiet) { changed = false; return; }
       if (S.payload) { S.offline = true; S.error = ''; S.status = '최신 내용을 읽지 못해서 마지막으로 읽은 화면을 보여 줘요. (' + friendly(e) + ') — 다시 "새로고침"을 눌러 보세요.'; }
       else S.error = friendly(e);
-    } finally { S.busy = false; if (!S.offline) S.status = ''; draw(); flushOps().catch(() => {}); }
+    } finally { S.busy = false; if (!quiet && !S.offline) S.status = ''; if (changed) draw(); flushOps().catch(() => {}); }
   }
 
   /* ── 수정 요청 보내기 ──
@@ -363,9 +367,9 @@
     if (cached) { try { S.payload = V.parseBackup(cached); } catch { ls.del(KEY.payload); } }
     draw();
     autoRefresh().catch(() => {});
-    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { if (S.payload) draw(); if (!S.busy && Date.now() - Date.parse(ls.get(KEY.at) || 0) > 120000) autoRefresh().catch(() => {}); } });
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { if (S.payload) draw(); if (!S.busy && Date.now() - Date.parse(ls.get(KEY.at) || 0) > 30000) autoRefresh().catch(() => {}); } });
     setInterval(() => { if (document.visibilityState === 'visible' && S.payload && !S.busy && $('#scrim').hidden) draw(); }, 60000); // "지금 수업" 표시를 분마다 갱신(고치는 중에는 건드리지 않음)
-    setInterval(() => { if (document.visibilityState === 'visible' && !S.busy && S.pending.length && ls.get(KEY.granted) && Date.now() - Date.parse(ls.get(KEY.at) || 0) > 100000) autoRefresh().catch(() => {}); }, 30000); // 반영 대기 중이면 곧 확인
+    setInterval(() => { if (document.visibilityState === 'visible' && !S.busy && $('#scrim').hidden && ls.get(KEY.granted) && Date.now() - Date.parse(ls.get(KEY.at) || 0) > 40000) autoRefresh().catch(() => {}); }, 20000); // 로그인이 살아 있는 동안 40초마다 조용히 새로 읽는다(고치는 중에는 건드리지 않음)
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then((r) => r.update().catch(() => {})).catch(() => {});
       // 새 화면 파일이 켜지면 한 번만 다시 읽어서 바로 새 버전을 쓴다
