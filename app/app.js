@@ -63,6 +63,7 @@
   // 구글 로그인 창의 오류 코드를 쉬운 말로
   const friendly = (e) => {
     const m = String((e && e.message) || '');
+    if (/Failed to fetch|NetworkError|Load failed/i.test(m)) return '인터넷 연결을 확인해 주세요.';
     if (/popup_closed|popup_failed/.test(m)) return '로그인 창이 닫혔거나 열리지 않았어요. 팝업을 허용하고 다시 눌러 주세요.';
     if (/access_denied/.test(m)) return '구글 연결을 허용하지 않으면 볼 수 없어요. 다시 눌러 허용해 주세요.';
     if (/interaction_required|immediate_failed|user_logged_out|login_required/.test(m)) return '다시 로그인이 필요해요. "구글로 연결하기"를 눌러 주세요.';
@@ -70,6 +71,13 @@
   };
 
   /* ── 불러오기 ── */
+  const tokenOk = () => !!(S.token && S.tokenExp > Date.now() + 30000);
+  // 자동으로 읽기(앱을 열 때·다시 볼 때·수정 반영 기다릴 때): 로그인 창 없이 읽을 수 있을 때만 읽고, 아니면 "새로고침을 눌러 주세요"로 알린다
+  async function autoRefresh() {
+    if (S.busy || !ls.get(KEY.granted)) return;
+    if (tokenOk()) return refresh(false);
+    if (S.payload && !S.stale) { S.stale = true; draw(); }
+  }
   async function refresh(interactive) {
     S.busy = true; S.error = ''; S.status = '구글 드라이브에서 읽는 중…'; draw();
     try {
@@ -77,9 +85,9 @@
       const text = await fetchBackup(token);
       if (!text) { S.payload = null; S.error = 'empty'; return; }
       const payload = V.parseBackup(text);
-      S.payload = payload; prune(payload); ls.set(KEY.payload, text); ls.set(KEY.at, new Date().toISOString()); S.offline = false;
+      S.payload = payload; prune(payload); ls.set(KEY.payload, text); ls.set(KEY.at, new Date().toISOString()); S.offline = false; S.stale = false;
     } catch (e) {
-      if (S.payload) { S.offline = true; S.error = ''; S.status = '인터넷이나 로그인 문제로 마지막으로 읽은 화면을 보여 줘요. (' + friendly(e) + ')'; }
+      if (S.payload) { S.offline = true; S.error = ''; S.status = '최신 내용을 읽지 못해서 마지막으로 읽은 화면을 보여 줘요. (' + friendly(e) + ') — 다시 "새로고침"을 눌러 보세요.'; }
       else S.error = friendly(e);
     } finally { S.busy = false; if (!S.offline) S.status = ''; draw(); flushOps().catch(() => {}); }
   }
@@ -105,17 +113,17 @@
     if (!r.ok) throw new Error('HTTP ' + r.status);
   }
   let flushing = false;
-  async function flushOps() {
+  async function flushOps(interactive) {
     const todo = S.pending.filter((p) => !p.sent);
-    if (flushing || !todo.length || !ls.get(KEY.granted)) return;
+    if (flushing || !todo.length || !ls.get(KEY.granted) || (!interactive && !tokenOk())) return; // 로그인 창을 못 여는 상황이면 다음에 눌렀을 때 보낸다
     flushing = true;
-    try { const token = await getToken(false); for (const p of todo) { await uploadOp(p.op, token); p.sent = true; savePending(); } }
+    try { const token = await getToken(!!interactive); for (const p of todo) { await uploadOp(p.op, token); p.sent = true; savePending(); } }
     catch { /* 인터넷이 없거나 로그인이 필요하면 나중에 다시 보낸다 */ }
     finally { flushing = false; draw(); }
   }
   function queueOps(list) {
     list.forEach((op) => S.pending.push({ op: { ...op, id: 'p' + rid(), ts: new Date().toISOString() }, sent: false, at: Date.now() }));
-    savePending(); closeSheet(); draw(); flushOps().catch(() => {});
+    savePending(); closeSheet(); draw(); flushOps(true).catch(() => {}); // 저장을 누른 순간이라 필요하면 로그인 창도 열 수 있다
   }
   const queueOp = (op) => queueOps([op]);
 
@@ -210,7 +218,7 @@
   function pendingNotice() {
     const unsent = S.pending.filter((p) => !p.sent).length, sent = S.pending.length - unsent;
     if (!S.pending.length) return '';
-    return `<div class="notice">${unsent ? `${unsent}건은 인터넷이 연결되면 보내요. ` : ''}${sent ? `${sent}건은 PC 딩동이 켜져 있으면 곧 반영돼요(보통 2분 안팎).` : ''}</div>`;
+    return `<div class="notice">${unsent ? `${unsent}건은 아직 보내지 못했어요. 위의 <b>새로고침</b>을 누르면 보내요. ` : ''}${sent ? `${sent}건은 PC 딩동이 켜져 있으면 곧 반영돼요(보통 2분 안팎).` : ''}</div>`;
   }
 
   /* ── 고치는 창(아래에서 올라오는 시트) ── */
@@ -328,13 +336,13 @@
     S.view = V.build(S.payload, new Date(), S.pending.map((p) => p.op));
     const v = S.view, sec = sections(v);
     tabs.hidden = false; tabs.querySelectorAll('button').forEach((b) => b.classList.toggle('on', b.dataset.tab === S.tab));
-    root.innerHTML = head(`${v.dateLabel}${v.school ? ' · ' + v.school : ''}`) + (S.status ? `<div class="notice">${esc(S.status)}</div>` : '') + failedNotice() + pendingNotice() + (S.tab === 'more' ? more() : sec[S.tab] || sec.today);
+    root.innerHTML = head(`${v.dateLabel}${v.school ? ' · ' + v.school : ''}`) + (S.status ? `<div class="notice">${esc(S.status)}</div>` : '') + (S.stale && !S.status ? `<div class="notice">마지막으로 읽은 화면이에요(${esc(when(ls.get(KEY.at)))}). 최신 내용은 위의 <b>새로고침</b>을 눌러 주세요.</div>` : '') + failedNotice() + pendingNotice() + (S.tab === 'more' ? more() : sec[S.tab] || sec.today);
     bind();
   }
   function bind() {
     const on = (id, fn) => { const e = $(id); if (e) e.onclick = fn; };
     on('#login', () => refresh(true));
-    on('#reload', () => refresh(!ls.get(KEY.granted)));
+    on('#reload', () => refresh(true));
     on('#logout', () => {
       try { if (S.token && window.google?.accounts?.oauth2) google.accounts.oauth2.revoke(S.token, () => {}); } catch {}
       [KEY.payload, KEY.at, KEY.granted, KEY.pending, KEY.failed].forEach(ls.del); S.pending = []; S.failed = []; S.token = ''; S.payload = null; S.view = null; S.error = ''; S.tab = 'today'; draw();
@@ -347,10 +355,10 @@
     const cached = ls.get(KEY.payload);
     if (cached) { try { S.payload = V.parseBackup(cached); } catch { ls.del(KEY.payload); } }
     draw();
-    if (ls.get(KEY.granted)) refresh(false).catch(() => {});
-    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { if (S.payload) draw(); if (ls.get(KEY.granted) && !S.busy && Date.now() - Date.parse(ls.get(KEY.at) || 0) > 120000) refresh(false).catch(() => {}); } });
+    autoRefresh().catch(() => {});
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { if (S.payload) draw(); if (!S.busy && Date.now() - Date.parse(ls.get(KEY.at) || 0) > 120000) autoRefresh().catch(() => {}); } });
     setInterval(() => { if (document.visibilityState === 'visible' && S.payload && !S.busy && $('#scrim').hidden) draw(); }, 60000); // "지금 수업" 표시를 분마다 갱신(고치는 중에는 건드리지 않음)
-    setInterval(() => { if (document.visibilityState === 'visible' && !S.busy && S.pending.length && ls.get(KEY.granted) && Date.now() - Date.parse(ls.get(KEY.at) || 0) > 100000) refresh(false).catch(() => {}); }, 30000); // 반영 대기 중이면 곧 확인
+    setInterval(() => { if (document.visibilityState === 'visible' && !S.busy && S.pending.length && ls.get(KEY.granted) && Date.now() - Date.parse(ls.get(KEY.at) || 0) > 100000) autoRefresh().catch(() => {}); }, 30000); // 반영 대기 중이면 곧 확인
     if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
   })();
 })();
