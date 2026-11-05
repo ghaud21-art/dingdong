@@ -7,7 +7,7 @@
   const SCOPE = 'https://www.googleapis.com/auth/drive.appdata';
   const DOC = 'dingdong-settings.json';
   const KEY = { payload: 'dd.payload', at: 'dd.at', granted: 'dd.granted', tab: 'dd.tab', pending: 'dd.pending', failed: 'dd.failed' };
-  const APP_VER = '2026-11-05 빠른읽기'; // 화면 버전(더보기에 표시: 폰이 새 화면을 받았는지 확인용)
+  const APP_VER = '2026-11-05 버튼수정'; // 화면 버전(더보기에 표시: 폰이 새 화면을 받았는지 확인용)
   const V = window.DDMobile;
   const $ = (s) => document.querySelector(s);
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -351,7 +351,7 @@
     bind();
   }
   function bind() {
-    const on = (id, fn) => { const e = $(id); if (e) e.onclick = fn; };
+    const on = (id, fn) => document.querySelectorAll(id).forEach((e) => { e.onclick = fn; }); // 같은 이름의 버튼이 화면에 둘 이상 있어도(위 새로고침·더보기의 다시 읽기) 모두 동작하게
     on('#login', () => refresh(true));
     on('#reload', () => refresh(true));
     on('#logout', () => {
