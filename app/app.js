@@ -6,7 +6,7 @@
   const CLIENT_ID = '26286844705-6j3i94arganim9nd8tkucdi05o1lcror.apps.googleusercontent.com';
   const SCOPE = 'https://www.googleapis.com/auth/drive.appdata';
   const DOC = 'dingdong-settings.json';
-  const KEY = { payload: 'dd.payload', at: 'dd.at', granted: 'dd.granted', tab: 'dd.tab', pending: 'dd.pending' };
+  const KEY = { payload: 'dd.payload', at: 'dd.at', granted: 'dd.granted', tab: 'dd.tab', pending: 'dd.pending', failed: 'dd.failed' };
   const V = window.DDMobile;
   const $ = (s) => document.querySelector(s);
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -15,8 +15,11 @@
   const mmdd = (d) => { const m = /^\d{4}-(\d{2})-(\d{2})$/.exec(d || ''); return m ? `${+m[1]}/${+m[2]}` : ''; };
 
   const loadPending = () => { try { const x = JSON.parse(ls.get(KEY.pending) || '[]'); return Array.isArray(x) ? x.filter((p) => p && p.op && p.op.id) : []; } catch { return []; } };
+  const loadFailed = () => { try { const x = JSON.parse(ls.get(KEY.failed) || '[]'); return Array.isArray(x) ? x.filter((p) => p && p.op && p.op.t) : []; } catch { return []; } };
+  const OPNAME = { 'todo.add': '할 일 추가', 'todo.done': '할 일 완료', 'todo.edit': '할 일 고치기', 'todo.del': '할 일 지우기', 'event.add': '일정 추가', 'event.edit': '일정 고치기', 'event.del': '일정 지우기', 'notion.done': '노션 체크', 'notion.edit': '노션 고치기', 'notion.line': '노션 본문 고치기', 'notion.add': '노션 본문 추가' };
+  const opLabel = (o) => { const t = String(o.text || o.title || '').slice(0, 24); return (OPNAME[o.t] || '수정') + (t ? ': ' + t : ''); };
   const rid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
-  const S = { open: {}, calMonth: '', calDay: '', pending: loadPending(), token: '', tokenExp: 0, payload: null, view: null, tab: (ls.get(KEY.tab) === 'todo' ? 'cal' : ls.get(KEY.tab)) || 'today', status: '', error: '', busy: false, offline: false };
+  const S = { failed: loadFailed(), open: {}, calMonth: '', calDay: '', pending: loadPending(), token: '', tokenExp: 0, payload: null, view: null, tab: (ls.get(KEY.tab) === 'todo' ? 'cal' : ls.get(KEY.tab)) || 'today', status: '', error: '', busy: false, offline: false };
   let tokenClient = null, pendingToken = null;
 
   /* ── 구글 로그인 ── */
@@ -84,10 +87,15 @@
   /* ── 수정 요청 보내기 ──
      요청 하나 = 숨김 폴더의 파일 하나(dd-op-<번호>.json). PC 딩동이 읽어 반영한 뒤 파일을 지우고, 처리한 번호를 백업(mobileApplied)에 적어 둔다.
      그 번호가 보이면 이 폰의 "대기 중" 표시를 없앤다. 3일이 지나도 반영되지 않으면 포기한다. */
+  const saveFailed = () => ls.set(KEY.failed, JSON.stringify(S.failed));
   const savePending = () => ls.set(KEY.pending, JSON.stringify(S.pending));
   function prune(payload) {
     const ap = new Set(payload.mobileApplied || []), lim = Date.now() - 3 * 86400000;
-    S.pending = S.pending.filter((p) => !ap.has(p.op.id) && p.at > lim); savePending();
+    const bad = new Set(payload.mobileFailed || []);
+    const gone = S.pending.filter((p) => bad.has(p.op.id)); // PC가 여러 번 시도하고도 반영하지 못한 요청
+    if (gone.length) S.failed = S.failed.concat(gone.map((p) => ({ op: p.op, at: Date.now() })));
+    S.failed = S.failed.filter((f) => f.at > Date.now() - 7 * 86400000).slice(-20); saveFailed();
+    S.pending = S.pending.filter((p) => !ap.has(p.op.id) && !bad.has(p.op.id) && p.at > lim); savePending();
   }
   async function uploadOp(op, token) {
     const b = '----dd' + rid(), meta = { name: 'dd-op-' + op.id + '.json', parents: ['appDataFolder'] };
@@ -195,6 +203,10 @@
       <section class="card"><h2>안내</h2><ul><li class="row"><div class="t muted">PC에서 고친 내용은 PC 딩동이 켜져 있을 때 몇 분 안에 여기에 나타나요. 여기서 고친 할 일·일정·노션 할 일(체크·제목·날짜)은 PC 딩동이 켜져 있을 때 2분 안팎에 PC에 반영돼요. 그룹 일정은 PC에서 고쳐요.</div></li><li class="row"><div class="t muted">학생 정보(생기부)는 폰에 올라오지 않아요.</div></li><li class="row"><div class="t muted">"연결 해제"를 누르면 이 폰에 저장된 화면과 구글 연결이 지워져요.</div></li></ul></section>`;
   }
 
+  function failedNotice() {
+    if (!S.failed.length) return '';
+    return `<div class="notice err"><b>PC가 반영하지 못한 수정 ${S.failed.length}건</b><br>노션 연결이나 노션 페이지를 확인한 뒤 다시 고쳐 주세요.<ul class="fl">${S.failed.slice(-5).map((f) => `<li>${esc(opLabel(f.op))}</li>`).join('')}</ul><button class="btn sm ghost" type="button" data-act="clear-failed">확인했어요</button></div>`;
+  }
   function pendingNotice() {
     const unsent = S.pending.filter((p) => !p.sent).length, sent = S.pending.length - unsent;
     if (!S.pending.length) return '';
@@ -281,6 +293,7 @@
   function onAct(el) {
     const act = el.dataset.act, v = S.view; if (!v) return;
     if (act === 'close') return closeSheet();
+    if (act === 'clear-failed') { S.failed = []; saveFailed(); return draw(); }
     if (act === 'more') { S.open[el.dataset.k] = !S.open[el.dataset.k]; return draw(); }
     if (act === 'add-todo') return openTodo(null, el.dataset.date);
     if (act === 'add-event') return openEvent(null, el.dataset.date);
@@ -315,7 +328,7 @@
     S.view = V.build(S.payload, new Date(), S.pending.map((p) => p.op));
     const v = S.view, sec = sections(v);
     tabs.hidden = false; tabs.querySelectorAll('button').forEach((b) => b.classList.toggle('on', b.dataset.tab === S.tab));
-    root.innerHTML = head(`${v.dateLabel}${v.school ? ' · ' + v.school : ''}`) + (S.status ? `<div class="notice">${esc(S.status)}</div>` : '') + pendingNotice() + (S.tab === 'more' ? more() : sec[S.tab] || sec.today);
+    root.innerHTML = head(`${v.dateLabel}${v.school ? ' · ' + v.school : ''}`) + (S.status ? `<div class="notice">${esc(S.status)}</div>` : '') + failedNotice() + pendingNotice() + (S.tab === 'more' ? more() : sec[S.tab] || sec.today);
     bind();
   }
   function bind() {
@@ -324,7 +337,7 @@
     on('#reload', () => refresh(!ls.get(KEY.granted)));
     on('#logout', () => {
       try { if (S.token && window.google?.accounts?.oauth2) google.accounts.oauth2.revoke(S.token, () => {}); } catch {}
-      [KEY.payload, KEY.at, KEY.granted, KEY.pending].forEach(ls.del); S.pending = []; S.token = ''; S.payload = null; S.view = null; S.error = ''; S.tab = 'today'; draw();
+      [KEY.payload, KEY.at, KEY.granted, KEY.pending, KEY.failed].forEach(ls.del); S.pending = []; S.failed = []; S.token = ''; S.payload = null; S.view = null; S.error = ''; S.tab = 'today'; draw();
     });
   }
   $('#tabs').addEventListener('click', (e) => { const b = e.target.closest('button[data-tab]'); if (!b) return; S.tab = b.dataset.tab; ls.set(KEY.tab, S.tab); draw(); window.scrollTo(0, 0); });
