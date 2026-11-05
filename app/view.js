@@ -62,8 +62,11 @@
       const nx = lessons.find((l) => l.state === 'later'); if (nx && !lessons.some((l) => l.state === 'now')) nx.state = 'next';
     }
     // 할 일: PC에 직접 적은 것 + 노션(PC가 요약해 올린 것)
+    const DEF_TAGS = [{ id: 'homeroom', name: '담임', color: 'pink' }, { id: 'subject', name: '교과', color: 'peach' }, { id: 'work', name: '업무', color: 'butter' }];
+    const tags = (Array.isArray(S.todoTags) ? S.todoTags : DEF_TAGS).filter((t) => t && typeof t.id === 'string' && typeof t.name === 'string' && t.name.trim()).map((t) => ({ id: t.id, name: t.name.trim() }));
+    const tagName = (id) => (tags.find((t) => t.id === id) || {}).name || '';
     const todos = [];
-    (Array.isArray(S.todos) ? S.todos : []).forEach((x) => { if (x && !x.done && x.text) todos.push({ key: 'me:' + (x.id || ''), id: x.id || '', text: x.text, star: !!x.important, due: x.due || '', src: 'me', pending: pset.has(x.id) }); });
+    (Array.isArray(S.todos) ? S.todos : []).forEach((x) => { if (x && !x.done && x.text) todos.push({ key: 'me:' + (x.id || ''), id: x.id || '', text: x.text, star: !!x.important, due: x.due || '', tag: x.tag || '', cat: tagName(x.tag), src: 'me', pending: pset.has(x.id) }); });
     (Array.isArray(M.notion) ? M.notion : []).forEach((x) => { if (x && !x.done && x.title) todos.push({ key: 'notion:' + (x.id || ''), id: x.id || '', pid: x.id || '', prop: x.prop || '', text: x.title, star: !!x.star, due: x.date || '', cat: x.cat || '', body: Array.isArray(x.body) ? x.body : null, src: 'notion', pending: pset.has(x.id) }); });
     todos.forEach((x) => { x.overdue = !!x.due && x.due < today; x.today = x.due === today; });
     const open = todos.sort((a, b) => (b.star ? 1 : 0) - (a.star ? 1 : 0) || (a.due || '9999').localeCompare(b.due || '9999'));
@@ -88,7 +91,7 @@
     return {
       today, dateLabel: `${now.getMonth() + 1}월 ${now.getDate()}일 ${DAYS[wd]}요일`, school: (S.school && S.school.name) || '',
       lessons, todos: open, todayTodos, upcoming, todayEvents: upcoming.filter((e) => e.date === today), meals, ddays: ddays(S, now).slice(0, 3),
-      todoGroups, notionCat: M.notionCat || null, byDate, pendingCount: ov.ops.length, savedAt: payload.savedAt || '', host: payload.host || '', summaryAt: M.at || '', hasSummary: !!payload.mobile
+      tags, todoGroups, notionCat: M.notionCat || null, byDate, pendingCount: ov.ops.length, savedAt: payload.savedAt || '', host: payload.host || '', summaryAt: M.at || '', hasSummary: !!payload.mobile
     };
   }
 

@@ -7,6 +7,7 @@
   const SCOPE = 'https://www.googleapis.com/auth/drive.appdata';
   const DOC = 'dingdong-settings.json';
   const KEY = { payload: 'dd.payload', at: 'dd.at', granted: 'dd.granted', tab: 'dd.tab', pending: 'dd.pending', failed: 'dd.failed' };
+  const APP_VER = '2026-11-05 분류'; // 화면 버전(더보기에 표시: 폰이 새 화면을 받았는지 확인용)
   const V = window.DDMobile;
   const $ = (s) => document.querySelector(s);
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -204,7 +205,7 @@
   }
   function more() {
     const v = S.view, at = ls.get(KEY.at);
-    return `<section class="card"><h2>연결 정보</h2><div class="muted">마지막으로 읽은 때: ${esc(at ? when(at) : '-')}</div>
+    return `<section class="card"><h2>연결 정보 <small>화면 버전 ${esc(APP_VER)}</small></h2><div class="muted">마지막으로 읽은 때: ${esc(at ? when(at) : '-')}</div>
       <div class="muted">PC가 올린 때: ${esc(v && v.savedAt ? when(v.savedAt) : '-')}${v && v.host ? ' · ' + esc(v.host) : ''}</div>
       ${v && !v.hasSummary ? '<div class="muted" style="margin-top:6px">PC 딩동을 최신 버전으로 올리면 노션 할 일·그룹 일정·급식도 보여요.</div>' : ''}
       <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm" id="reload">지금 다시 읽기</button><button class="btn ghost sm" id="logout">연결 해제</button></div></section>
@@ -225,12 +226,18 @@
   const sheet = () => $('#sheet');
   function closeSheet() { $('#scrim').hidden = true; sheet().innerHTML = ''; }
   const dayStr = (d) => { const p = (n) => String(n).padStart(2, '0'); return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()); };
+  // 분류 고르기: PC에서 정한 분류를 그대로 쓴다(없으면 안 보임). 새 할 일은 '업무'(없으면 첫 분류)가 기본
+  function tagSel(cur) {
+    const tags = (S.view && S.view.tags) || []; if (!tags.length) return '';
+    const def = cur !== null ? cur : (tags.find((t) => t.id === 'work') || tags[0]).id;
+    return `<label for="fTag">분류</label><select id="fTag"><option value="">(없음)</option>${tags.map((t) => `<option value="${esc(t.id)}" ${t.id === def ? 'selected' : ''}>${esc(t.name)}</option>`).join('')}</select>`;
+  }
   function openTodo(x, dflt) {
     const e = !!x;
     sheet().dataset.kind = 'todo'; sheet().dataset.id = e ? x.id : '';
     sheet().innerHTML = `<h3>${e ? '할 일 고치기' : '할 일 추가'}</h3><label for="fText">할 일</label><input type="text" id="fText" maxlength="200" required value="${esc(e ? x.text : '')}">
       <label for="fDue">기한 (없으면 비워 두세요)</label><input type="date" id="fDue" value="${esc(e ? x.due : dflt || '')}">
-      <label class="chk"><input type="checkbox" id="fStar" ${e && x.star ? 'checked' : ''}> 중요한 일</label>
+      ${tagSel(e ? x.tag : null)}<label class="chk"><input type="checkbox" id="fStar" ${e && x.star ? 'checked' : ''}> 중요한 일</label>
       <div class="btns"><button class="btn" type="submit">저장</button>${e ? '<button class="btn danger" type="button" data-act="del">지우기</button>' : ''}<button class="btn ghost" type="button" data-act="close">닫기</button></div>`;
     $('#scrim').hidden = false; $('#fText').focus();
   }
@@ -289,8 +296,8 @@
     const kind = sheet().dataset.kind, id = sheet().dataset.id;
     if (kind === 'todo') {
       const text = $('#fText').value.trim(); if (!text) return;
-      const due = $('#fDue').value || '', star = $('#fStar').checked;
-      if (id) queueOp({ t: 'todo.edit', tid: id, text, due, star }); else queueOp({ t: 'todo.add', tid: 'm' + rid(), text, due, star });
+      const due = $('#fDue').value || '', star = $('#fStar').checked, tag = $('#fTag') ? { tag: $('#fTag').value } : {};
+      if (id) queueOp({ t: 'todo.edit', tid: id, text, due, star, ...tag }); else queueOp({ t: 'todo.add', tid: 'm' + rid(), text, due, star, ...tag });
     } else if (kind === 'notion') {
       const ops = notionOps(id); if (ops === null) return; if (!ops.length) return closeSheet(); queueOps(ops);
     } else if (kind === 'event') {
@@ -359,6 +366,11 @@
     document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { if (S.payload) draw(); if (!S.busy && Date.now() - Date.parse(ls.get(KEY.at) || 0) > 120000) autoRefresh().catch(() => {}); } });
     setInterval(() => { if (document.visibilityState === 'visible' && S.payload && !S.busy && $('#scrim').hidden) draw(); }, 60000); // "지금 수업" 표시를 분마다 갱신(고치는 중에는 건드리지 않음)
     setInterval(() => { if (document.visibilityState === 'visible' && !S.busy && S.pending.length && ls.get(KEY.granted) && Date.now() - Date.parse(ls.get(KEY.at) || 0) > 100000) autoRefresh().catch(() => {}); }, 30000); // 반영 대기 중이면 곧 확인
-    if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then((r) => r.update().catch(() => {})).catch(() => {});
+      // 새 화면 파일이 켜지면 한 번만 다시 읽어서 바로 새 버전을 쓴다
+      let first = !!navigator.serviceWorker.controller;
+      navigator.serviceWorker.addEventListener('controllerchange', () => { if (first && !sessionStorage.getItem('dd.reloaded')) { try { sessionStorage.setItem('dd.reloaded', '1'); } catch {} location.reload(); } first = true; });
+    }
   })();
 })();

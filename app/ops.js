@@ -21,9 +21,9 @@
     const o = { id: String(op.id), t: op.t, ts: /^\d{4}-\d{2}-\d{2}T/.test(String(op.ts)) ? String(op.ts) : '' };
     const date = (k, req) => { if (op[k] === undefined || op[k] === null) return !req; if (op[k] === '' && !req) { o[k] = ''; return true; } if (!validDate(op[k])) return false; o[k] = String(op[k]); return true; };
     switch (op.t) {
-      case 'todo.add': { if (!ID.test(String(op.tid || ''))) return null; o.tid = String(op.tid); o.text = clip(op.text, 200); if (!o.text) return null; if (!date('due', false)) return null; o.star = !!op.star; return o; }
+      case 'todo.add': { if (!ID.test(String(op.tid || ''))) return null; o.tid = String(op.tid); o.text = clip(op.text, 200); if (!o.text) return null; if (!date('due', false)) return null; o.star = !!op.star; if (op.tag !== undefined) { if (op.tag !== '' && !ID.test(String(op.tag))) return null; o.tag = String(op.tag); } return o; }
       case 'todo.done': { if (!ID.test(String(op.tid || ''))) return null; o.tid = String(op.tid); o.done = !!op.done; return o; }
-      case 'todo.edit': { if (!ID.test(String(op.tid || ''))) return null; o.tid = String(op.tid); if (op.text !== undefined) { o.text = clip(op.text, 200); if (!o.text) return null; } if (!date('due', false)) return null; if (op.star !== undefined) o.star = !!op.star; return o; }
+      case 'todo.edit': { if (!ID.test(String(op.tid || ''))) return null; o.tid = String(op.tid); if (op.text !== undefined) { o.text = clip(op.text, 200); if (!o.text) return null; } if (!date('due', false)) return null; if (op.star !== undefined) o.star = !!op.star; if (op.tag !== undefined) { if (op.tag !== '' && !ID.test(String(op.tag))) return null; o.tag = String(op.tag); } return o; }
       case 'todo.del': { if (!ID.test(String(op.tid || ''))) return null; o.tid = String(op.tid); return o; }
       case 'event.add': { if (!ID.test(String(op.eid || ''))) return null; o.eid = String(op.eid); o.title = clip(op.title, 100); if (!o.title || !date('date', true)) return null; o.time = op.time ? String(op.time) : ''; if (o.time && !HM.test(o.time)) return null; return o; }
       case 'event.edit': { if (!ID.test(String(op.eid || ''))) return null; o.eid = String(op.eid); if (op.title !== undefined) { o.title = clip(op.title, 100); if (!o.title) return null; } if (op.date !== undefined && !date('date', true)) return null; if (op.time !== undefined) { o.time = op.time ? String(op.time) : ''; if (o.time && !HM.test(o.time)) return null; } return o; }
@@ -46,9 +46,9 @@
       const op = clean(raw);
       if (!op) { rejected.push({ id: String(raw && raw.id || ''), why: '모양이 올바르지 않아요' }); continue; }
       switch (op.t) {
-        case 'todo.add': if (!byTodo(op.tid)) todos.push({ id: op.tid, text: op.text, tag: 'work', due: op.due || '', done: false, important: !!op.star }); break;
+        case 'todo.add': if (!byTodo(op.tid)) todos.push({ id: op.tid, text: op.text, tag: op.tag !== undefined ? op.tag : 'work', due: op.due || '', done: false, important: !!op.star }); break;
         case 'todo.done': { const x = byTodo(op.tid); if (x) x.done = op.done; break; }
-        case 'todo.edit': { const x = byTodo(op.tid); if (x) { if (op.text !== undefined) x.text = op.text; if (op.due !== undefined) x.due = op.due; if (op.star !== undefined) x.important = op.star; } break; }
+        case 'todo.edit': { const x = byTodo(op.tid); if (x) { if (op.text !== undefined) x.text = op.text; if (op.due !== undefined) x.due = op.due; if (op.star !== undefined) x.important = op.star; if (op.tag !== undefined) x.tag = op.tag; } break; }
         case 'todo.del': todos = todos.filter((x) => x.id !== op.tid); break;
         case 'event.add': if (!byEv(op.eid)) events.push({ id: op.eid, date: op.date, time: op.time || '', title: op.title }); break;
         case 'event.edit': { const x = byEv(op.eid); if (x) { if (op.title !== undefined) x.title = op.title; if (op.date !== undefined) x.date = op.date; if (op.time !== undefined) x.time = op.time; } break; }
