@@ -16,7 +16,7 @@
 
   const loadPending = () => { try { const x = JSON.parse(ls.get(KEY.pending) || '[]'); return Array.isArray(x) ? x.filter((p) => p && p.op && p.op.id) : []; } catch { return []; } };
   const rid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
-  const S = { calMonth: '', calDay: '', pending: loadPending(), token: '', tokenExp: 0, payload: null, view: null, tab: ls.get(KEY.tab) || 'today', status: '', error: '', busy: false, offline: false };
+  const S = { open: {}, calMonth: '', calDay: '', pending: loadPending(), token: '', tokenExp: 0, payload: null, view: null, tab: ls.get(KEY.tab) || 'today', status: '', error: '', busy: false, offline: false };
   let tokenClient = null, pendingToken = null;
 
   /* ── 구글 로그인 ── */
@@ -126,7 +126,10 @@
   };
   const todoList = (items) => `<ul class="tl">${items.map(todoLi).join('')}</ul>`;
   // 할 일 탭: 기한 지남 / 오늘 / 이번 주 / 그 뒤 / 기한 없음으로 나눠서 보여 준다
-  const todoGroups = (v) => v.todoGroups.map((g) => `<div class="grp"><div class="gh ${g.key}">${g.label}<span>${g.items.length}</span></div>${todoList(g.items)}</div>`).join('');
+  // 목록이 너무 길어지지 않게 처음엔 몇 개만 보여 주고 "더 보기"로 펼친다
+  const LIM = { todo: 5, event: 7 };
+  const moreBtn = (k, total, lim) => (total > lim ? `<button type="button" class="more" data-act="more" data-k="${k}">${S.open[k] ? '접기' : `+ ${total - lim}개 더 보기`}</button>` : '');
+  const todoGroups = (v) => v.todoGroups.map((g) => { const k = 'g:' + g.key, shown = S.open[k] ? g.items : g.items.slice(0, LIM.todo); return `<div class="grp"><div class="gh ${g.key}">${g.label}<span>${g.items.length}</span></div>${todoList(shown)}${moreBtn(k, g.items.length, LIM.todo)}</div>`; }).join('');
   const evLi = (e, showDate) => `<li class="row ${e.pending ? 'pend' : ''}"><time>${esc(showDate ? `${mmdd(e.date)}${e.time ? ' ' + e.time : ''}` : (e.time || '종일'))}</time><div class="t ${e.src === 'me' && e.id ? 'tap' : ''}" ${e.src === 'me' && e.id ? `data-act="edit-event" data-eid="${esc(e.id)}"` : ''}>${esc(e.title)}${chips([e.pending && ['wait', '반영 대기'], [e.src, e.label]])}</div></li>`;
   const addBtn = (act, label, date) => `<button class="btn sm add" data-act="${act}" ${date ? `data-date="${esc(date)}"` : ''}>+ ${label}</button>`;
   const wk = ['일', '월', '화', '수', '목', '금', '토'];
@@ -159,12 +162,12 @@
     return {
       today: `
         <section class="card"><h2>오늘 수업 <small>${v.lessons.length ? v.lessons.length + '시간' : ''}</small></h2>${lessons}</section>
-        <section class="card"><h2>오늘 할 일 <small>${v.todayTodos.length ? v.todayTodos.length + '개' : ''}</small>${addBtn('add-todo', '할 일')}</h2>${v.todayTodos.length ? `${todoList(v.todayTodos.slice(0, 12))}${v.todayTodos.length > 12 ? `<div class="muted">외 ${v.todayTodos.length - 12}개 — 할 일 탭에서 볼 수 있어요</div>` : ''}` : '<div class="empty">오늘 할 일이 없어요</div>'}</section>
+        <section class="card"><h2>오늘 할 일 <small>${v.todayTodos.length ? v.todayTodos.length + '개' : ''}</small>${addBtn('add-todo', '할 일')}</h2>${v.todayTodos.length ? `${todoList(v.todayTodos.slice(0, 5))}${v.todayTodos.length > 5 ? `<div class="muted">외 ${v.todayTodos.length - 5}개 — 할 일 탭에서 볼 수 있어요</div>` : ''}` : '<div class="empty">오늘 할 일이 없어요</div>'}</section>
         <section class="card"><h2>오늘 일정 <small></small>${addBtn('add-event', '일정')}</h2>${v.todayEvents.length ? `<ul>${v.todayEvents.map((e) => evLi(e, false)).join('')}</ul>` : '<div class="empty">오늘은 일정이 없어요</div>'}</section>
         ${v.meals.length ? `<section class="card"><h2>오늘 급식</h2>${v.meals.map((m) => `<div class="muted">${esc(m.kind || '')}</div><div style="font-weight:700">${(m.dishes || []).map(esc).join(' · ')}</div>`).join('')}</section>` : ''}
         ${v.ddays.length ? `<section class="card"><h2>챙길 날</h2><ul>${v.ddays.map((d) => li(d.n === 0 ? 'D-DAY' : 'D-' + d.n, esc(d.t), `<span class="muted">${mmdd(d.date)}</span>`)).join('')}</ul></section>` : ''}`,
       todo: `<section class="card"><h2>할 일 <small>${v.todos.length}개</small>${addBtn('add-todo', '할 일')}</h2>${v.todos.length ? todoGroups(v) : '<div class="empty">남은 할 일이 없어요</div>'}</section>`,
-      cal: `${calendarCard(v)}${dayCard(v)}<section class="card"><h2>앞으로 30일 일정 <small>${v.upcoming.length}개</small></h2>${v.upcoming.length ? `<ul>${v.upcoming.map((e) => evLi(e, true)).join('')}</ul>` : '<div class="empty">30일 안에 일정이 없어요</div>'}</section>`
+      cal: `${calendarCard(v)}${dayCard(v)}<section class="card"><h2>앞으로 30일 일정 <small>${v.upcoming.length}개</small></h2>${v.upcoming.length ? `<ul>${(S.open.up ? v.upcoming : v.upcoming.slice(0, LIM.event)).map((e) => evLi(e, true)).join('')}</ul>${moreBtn('up', v.upcoming.length, LIM.event)}` : '<div class="empty">30일 안에 일정이 없어요</div>'}</section>`
     };
   }
 
@@ -241,6 +244,7 @@
   function onAct(el) {
     const act = el.dataset.act, v = S.view; if (!v) return;
     if (act === 'close') return closeSheet();
+    if (act === 'more') { S.open[el.dataset.k] = !S.open[el.dataset.k]; return draw(); }
     if (act === 'add-todo') return openTodo(null, el.dataset.date);
     if (act === 'add-event') return openEvent(null, el.dataset.date);
     if (act === 'cal-day') { S.calDay = el.dataset.date; S.calMonth = S.calDay.slice(0, 7); return draw(); }
