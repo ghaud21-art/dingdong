@@ -41,7 +41,7 @@
     const S = payload.settings || {}, M = payload.mobile || {};
     const r = getOps().apply({ todos: Array.isArray(S.todos) ? S.todos : [], events: Array.isArray(S.events) ? S.events : [] }, ops);
     const notion = (Array.isArray(M.notion) ? M.notion : []).map((x) => ({ ...x }));
-    for (const n of r.notion) notion.forEach((x) => { if (x && x.id === n.pid) x.done = n.done; });
+    for (const n of r.notion) notion.forEach((x) => { if (x && x.id === n.pid) { if (n.edit) { if (n.title !== undefined) x.title = n.title; if (n.date !== undefined) x.date = n.date; } else x.done = n.done; } });
     return { payload: { ...payload, settings: { ...S, todos: r.todos, events: r.events }, mobile: payload.mobile ? { ...M, notion } : payload.mobile }, ops };
   }
 
@@ -67,6 +67,11 @@
     (Array.isArray(M.notion) ? M.notion : []).forEach((x) => { if (x && !x.done && x.title) todos.push({ key: 'notion:' + (x.id || ''), id: x.id || '', pid: x.id || '', prop: x.prop || '', text: x.title, star: !!x.star, due: x.date || '', cat: x.cat || '', src: 'notion', pending: pset.has(x.id) }); });
     todos.forEach((x) => { x.overdue = !!x.due && x.due < today; x.today = x.due === today; });
     const open = todos.sort((a, b) => (b.star ? 1 : 0) - (a.star ? 1 : 0) || (a.due || '9999').localeCompare(b.due || '9999'));
+    // 할 일 탭용 묶음: 기한 지남 / 오늘 / 이번 주(7일 안) / 그 뒤 / 기한 없음
+    const weekEnd = iso(addDays(now, 7));
+    const gkey = (x) => (!x.due ? 'none' : x.due < today ? 'late' : x.due === today ? 'today' : x.due <= weekEnd ? 'week' : 'later');
+    const todoGroups = [['late', '기한 지남'], ['today', '오늘'], ['week', '이번 주'], ['later', '그 뒤'], ['none', '기한 없음']]
+      .map(([key, label]) => ({ key, label, items: open.filter((x) => gkey(x) === key).sort((a, b) => (a.due || '').localeCompare(b.due || '') || (b.star ? 1 : 0) - (a.star ? 1 : 0)) })).filter((g) => g.items.length);
     const todayTodos = open.filter((x) => !x.due || x.due <= today);
     // 일정: 내 일정 + 그룹 일정(PC가 올린 것) — 오늘부터 30일
     const end = iso(addDays(now, 30));
@@ -83,7 +88,7 @@
     return {
       today, dateLabel: `${now.getMonth() + 1}월 ${now.getDate()}일 ${DAYS[wd]}요일`, school: (S.school && S.school.name) || '',
       lessons, todos: open, todayTodos, upcoming, todayEvents: upcoming.filter((e) => e.date === today), meals, ddays: ddays(S, now).slice(0, 3),
-      byDate, pendingCount: ov.ops.length, savedAt: payload.savedAt || '', host: payload.host || '', summaryAt: M.at || '', hasSummary: !!payload.mobile
+      todoGroups, byDate, pendingCount: ov.ops.length, savedAt: payload.savedAt || '', host: payload.host || '', summaryAt: M.at || '', hasSummary: !!payload.mobile
     };
   }
 

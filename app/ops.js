@@ -12,7 +12,7 @@
     const t = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3]));
     return t.getUTCFullYear() === +m[1] && t.getUTCMonth() === +m[2] - 1 && t.getUTCDate() === +m[3];
   };
-  const TYPES = ['todo.add', 'todo.done', 'todo.edit', 'todo.del', 'event.add', 'event.edit', 'event.del', 'notion.done'];
+  const TYPES = ['todo.add', 'todo.done', 'todo.edit', 'todo.del', 'event.add', 'event.edit', 'event.del', 'notion.done', 'notion.edit'];
   const clip = (v, n) => String(v ?? '').replace(/[\u0000-\u001f]/g, ' ').trim().slice(0, n);
 
   // 요청 하나를 검사해 안전한 모양으로 돌려준다. 이상하면 null.
@@ -28,6 +28,7 @@
       case 'event.add': { if (!ID.test(String(op.eid || ''))) return null; o.eid = String(op.eid); o.title = clip(op.title, 100); if (!o.title || !date('date', true)) return null; o.time = op.time ? String(op.time) : ''; if (o.time && !HM.test(o.time)) return null; return o; }
       case 'event.edit': { if (!ID.test(String(op.eid || ''))) return null; o.eid = String(op.eid); if (op.title !== undefined) { o.title = clip(op.title, 100); if (!o.title) return null; } if (op.date !== undefined && !date('date', true)) return null; if (op.time !== undefined) { o.time = op.time ? String(op.time) : ''; if (o.time && !HM.test(o.time)) return null; } return o; }
       case 'event.del': { if (!ID.test(String(op.eid || ''))) return null; o.eid = String(op.eid); return o; }
+      case 'notion.edit': { if (!ID.test(String(op.pid || '').replace(/-/g, 'x'))) return null; o.pid = String(op.pid); if (op.title !== undefined) { o.title = clip(op.title, 200); if (!o.title) return null; } if (op.date !== undefined && !date('date', true)) return null; if (o.title === undefined && o.date === undefined) return null; return o; }
       case 'notion.done': { if (!ID.test(String(op.pid || '').replace(/-/g, 'x'))) return null; o.pid = String(op.pid); o.prop = clip(op.prop, 60); if (!o.prop) return null; o.done = !!op.done; return o; }
     }
     return null;
@@ -50,6 +51,7 @@
         case 'event.add': if (!byEv(op.eid)) events.push({ id: op.eid, date: op.date, time: op.time || '', title: op.title }); break;
         case 'event.edit': { const x = byEv(op.eid); if (x) { if (op.title !== undefined) x.title = op.title; if (op.date !== undefined) x.date = op.date; if (op.time !== undefined) x.time = op.time; } break; }
         case 'event.del': events = events.filter((x) => x.id !== op.eid); break;
+        case 'notion.edit': notion.push({ opId: op.id, pid: op.pid, edit: true, title: op.title, date: op.date }); break;
         case 'notion.done': notion.push({ opId: op.id, pid: op.pid, prop: op.prop, done: op.done }); break;
       }
       applied.push(op.id);

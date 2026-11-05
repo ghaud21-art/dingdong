@@ -114,7 +114,19 @@
   const li = (time, t, extra, cls) => `<li class="row ${cls || ''}"><time>${esc(time)}</time><div class="t">${t}</div>${extra || ''}</li>`;
   const chips = (list) => { const c = list.filter(Boolean).map(([k, t]) => `<span class="chip ${k}">${esc(t)}</span>`).join(''); return c ? `<span class="chips">${c}</span>` : ''; };
   const canCheck = (x) => (x.src === 'me' && x.id) || (x.src === 'notion' && x.pid && x.prop);
-  const todoLi = (x) => `<li class="row ${x.pending ? 'pend' : ''}">${canCheck(x) ? `<button class="ck" data-act="done" data-key="${esc(x.key)}" aria-label="${esc(x.text)} 완료"></button>` : ''}<time>${esc(x.due ? mmdd(x.due) : '')}</time><div class="t ${x.src === 'me' && x.id ? 'tap' : ''}" ${x.src === 'me' && x.id ? `data-act="edit-todo" data-key="${esc(x.key)}"` : ''}>${esc(x.text)}${x.cat ? `<small>${esc(x.cat)}</small>` : ''}${chips([x.pending && ['wait', '반영 대기'], x.star && ['star', '중요'], x.overdue && ['late', '기한 지남'], x.src === 'notion' && ['notion', '노션']])}</div></li>`;
+  // 할 일 한 줄: 왼쪽 동그라미(완료) · 제목(굵게, 중요하면 ★) · 아래 작은 글씨에 날짜·분류·출처. 칩을 여러 개 늘어놓지 않는다.
+  const todoLi = (x) => {
+    const editable = (x.src === 'me' && x.id) || (x.src === 'notion' && x.pid);
+    const meta = [
+      x.due && (x.overdue ? `<b class="late">${mmdd(x.due)} 지남</b>` : x.today ? '<b class="today">오늘</b>' : mmdd(x.due)),
+      x.cat && esc(x.cat), x.src === 'notion' && '<span class="nt">노션</span>', x.pending && '<b class="wait">반영 대기</b>'
+    ].filter(Boolean).join(' · ');
+    const ck = canCheck(x) ? `<button class="ck" data-act="done" data-key="${esc(x.key)}" aria-label="${esc(x.text)} 완료"></button>` : '<span class="ck-sp"></span>';
+    return `<li class="td ${x.pending ? 'pend' : ''}">${ck}<div class="tb ${editable ? 'tap' : ''}" ${editable ? `data-act="${x.src === 'notion' ? 'edit-notion' : 'edit-todo'}" data-key="${esc(x.key)}"` : ''}><div class="tt">${x.star ? '<span class="st">★</span>' : ''}${esc(x.text)}</div>${meta ? `<div class="tm">${meta}</div>` : ''}</div></li>`;
+  };
+  const todoList = (items) => `<ul class="tl">${items.map(todoLi).join('')}</ul>`;
+  // 할 일 탭: 기한 지남 / 오늘 / 이번 주 / 그 뒤 / 기한 없음으로 나눠서 보여 준다
+  const todoGroups = (v) => v.todoGroups.map((g) => `<div class="grp"><div class="gh ${g.key}">${g.label}<span>${g.items.length}</span></div>${todoList(g.items)}</div>`).join('');
   const evLi = (e, showDate) => `<li class="row ${e.pending ? 'pend' : ''}"><time>${esc(showDate ? `${mmdd(e.date)}${e.time ? ' ' + e.time : ''}` : (e.time || '종일'))}</time><div class="t ${e.src === 'me' && e.id ? 'tap' : ''}" ${e.src === 'me' && e.id ? `data-act="edit-event" data-eid="${esc(e.id)}"` : ''}>${esc(e.title)}${chips([e.pending && ['wait', '반영 대기'], [e.src, e.label]])}</div></li>`;
   const addBtn = (act, label, date) => `<button class="btn sm add" data-act="${act}" ${date ? `data-date="${esc(date)}"` : ''}>+ ${label}</button>`;
   const wk = ['일', '월', '화', '수', '목', '금', '토'];
@@ -137,7 +149,7 @@
   function dayCard(v) {
     const ds = S.calDay || todayStr(), d = new Date(ds + 'T00:00'), info = v.byDate[ds] || { todos: [], events: [] };
     return `<section class="card"><h2>${d.getMonth() + 1}월 ${d.getDate()}일 (${wk[d.getDay()]}) <small></small>${addBtn('add-todo', '할 일', ds)}${addBtn('add-event', '일정', ds)}</h2>
-      ${info.todos.length ? `<ul>${info.todos.map(todoLi).join('')}</ul>` : ''}${info.events.length ? `<ul>${info.events.map((e) => evLi(e, false)).join('')}</ul>` : ''}${info.todos.length || info.events.length ? '' : '<div class="empty">이 날은 할 일·일정이 없어요</div>'}</section>`;
+      ${info.todos.length ? todoList(info.todos) : ''}${info.events.length ? `<ul>${info.events.map((e) => evLi(e, false)).join('')}</ul>` : ''}${info.todos.length || info.events.length ? '' : '<div class="empty">이 날은 할 일·일정이 없어요</div>'}</section>`;
   }
 
   function sections(v) {
@@ -147,11 +159,11 @@
     return {
       today: `
         <section class="card"><h2>오늘 수업 <small>${v.lessons.length ? v.lessons.length + '시간' : ''}</small></h2>${lessons}</section>
-        <section class="card"><h2>오늘 할 일 <small>${v.todayTodos.length ? v.todayTodos.length + '개' : ''}</small>${addBtn('add-todo', '할 일')}</h2>${v.todayTodos.length ? `<ul>${v.todayTodos.slice(0, 12).map(todoLi).join('')}</ul>${v.todayTodos.length > 12 ? `<div class="muted">외 ${v.todayTodos.length - 12}개 — 할 일 탭에서 볼 수 있어요</div>` : ''}` : '<div class="empty">오늘 할 일이 없어요</div>'}</section>
+        <section class="card"><h2>오늘 할 일 <small>${v.todayTodos.length ? v.todayTodos.length + '개' : ''}</small>${addBtn('add-todo', '할 일')}</h2>${v.todayTodos.length ? `${todoList(v.todayTodos.slice(0, 12))}${v.todayTodos.length > 12 ? `<div class="muted">외 ${v.todayTodos.length - 12}개 — 할 일 탭에서 볼 수 있어요</div>` : ''}` : '<div class="empty">오늘 할 일이 없어요</div>'}</section>
         <section class="card"><h2>오늘 일정 <small></small>${addBtn('add-event', '일정')}</h2>${v.todayEvents.length ? `<ul>${v.todayEvents.map((e) => evLi(e, false)).join('')}</ul>` : '<div class="empty">오늘은 일정이 없어요</div>'}</section>
         ${v.meals.length ? `<section class="card"><h2>오늘 급식</h2>${v.meals.map((m) => `<div class="muted">${esc(m.kind || '')}</div><div style="font-weight:700">${(m.dishes || []).map(esc).join(' · ')}</div>`).join('')}</section>` : ''}
         ${v.ddays.length ? `<section class="card"><h2>챙길 날</h2><ul>${v.ddays.map((d) => li(d.n === 0 ? 'D-DAY' : 'D-' + d.n, esc(d.t), `<span class="muted">${mmdd(d.date)}</span>`)).join('')}</ul></section>` : ''}`,
-      todo: `<section class="card"><h2>할 일 <small>${v.todos.length}개</small>${addBtn('add-todo', '할 일')}</h2>${v.todos.length ? `<ul>${v.todos.map(todoLi).join('')}</ul>` : '<div class="empty">남은 할 일이 없어요</div>'}</section>`,
+      todo: `<section class="card"><h2>할 일 <small>${v.todos.length}개</small>${addBtn('add-todo', '할 일')}</h2>${v.todos.length ? todoGroups(v) : '<div class="empty">남은 할 일이 없어요</div>'}</section>`,
       cal: `${calendarCard(v)}${dayCard(v)}<section class="card"><h2>앞으로 30일 일정 <small>${v.upcoming.length}개</small></h2>${v.upcoming.length ? `<ul>${v.upcoming.map((e) => evLi(e, true)).join('')}</ul>` : '<div class="empty">30일 안에 일정이 없어요</div>'}</section>`
     };
   }
@@ -171,7 +183,7 @@
       <div class="muted">PC가 올린 때: ${esc(v && v.savedAt ? when(v.savedAt) : '-')}${v && v.host ? ' · ' + esc(v.host) : ''}</div>
       ${v && !v.hasSummary ? '<div class="muted" style="margin-top:6px">PC 딩동을 최신 버전으로 올리면 노션 할 일·그룹 일정·급식도 보여요.</div>' : ''}
       <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm" id="reload">지금 다시 읽기</button><button class="btn ghost sm" id="logout">연결 해제</button></div></section>
-      <section class="card"><h2>안내</h2><ul><li class="row"><div class="t muted">PC에서 고친 내용은 PC 딩동이 켜져 있을 때 몇 분 안에 여기에 나타나요. 여기서 고친 할 일·일정(노션 할 일은 체크만)은 PC 딩동이 켜져 있을 때 2분 안팎에 PC에 반영돼요. 그룹 일정은 PC에서 고쳐요.</div></li><li class="row"><div class="t muted">학생 정보(생기부)는 폰에 올라오지 않아요.</div></li><li class="row"><div class="t muted">"연결 해제"를 누르면 이 폰에 저장된 화면과 구글 연결이 지워져요.</div></li></ul></section>`;
+      <section class="card"><h2>안내</h2><ul><li class="row"><div class="t muted">PC에서 고친 내용은 PC 딩동이 켜져 있을 때 몇 분 안에 여기에 나타나요. 여기서 고친 할 일·일정·노션 할 일(체크·제목·날짜)은 PC 딩동이 켜져 있을 때 2분 안팎에 PC에 반영돼요. 그룹 일정은 PC에서 고쳐요.</div></li><li class="row"><div class="t muted">학생 정보(생기부)는 폰에 올라오지 않아요.</div></li><li class="row"><div class="t muted">"연결 해제"를 누르면 이 폰에 저장된 화면과 구글 연결이 지워져요.</div></li></ul></section>`;
   }
 
   function pendingNotice() {
@@ -193,6 +205,15 @@
       <div class="btns"><button class="btn" type="submit">저장</button>${e ? '<button class="btn danger" type="button" data-act="del">지우기</button>' : ''}<button class="btn ghost" type="button" data-act="close">닫기</button></div>`;
     $('#scrim').hidden = false; $('#fText').focus();
   }
+  // 노션 할 일: 제목과 날짜만 고친다(노션 쪽 분류·내용은 PC나 노션에서). PC 딩동이 노션에 반영한다.
+  function openNotion(x) {
+    sheet().dataset.kind = 'notion'; sheet().dataset.id = x.pid;
+    sheet().innerHTML = `<h3>노션 할 일 고치기</h3><label for="fText">제목</label><input type="text" id="fText" maxlength="200" required value="${esc(x.text)}">
+      <label for="fDue">날짜</label><input type="date" id="fDue" required value="${esc(x.due)}">
+      <p class="muted" style="margin:10px 0 0">저장하면 PC 딩동이 노션에 반영해요(PC가 켜져 있을 때 2분 안팎).</p>
+      <div class="btns"><button class="btn" type="submit">저장</button><button class="btn ghost" type="button" data-act="close">닫기</button></div>`;
+    $('#scrim').hidden = false; $('#fText').focus();
+  }
   function openEvent(x, dflt) {
     const e = !!x;
     sheet().dataset.kind = 'event'; sheet().dataset.id = e ? x.id : '';
@@ -209,6 +230,9 @@
       const text = $('#fText').value.trim(); if (!text) return;
       const due = $('#fDue').value || '', star = $('#fStar').checked;
       if (id) queueOp({ t: 'todo.edit', tid: id, text, due, star }); else queueOp({ t: 'todo.add', tid: 'm' + rid(), text, due, star });
+    } else if (kind === 'notion') {
+      const text = $('#fText').value.trim(), due = $('#fDue').value; if (!text || !due) return;
+      queueOp({ t: 'notion.edit', pid: id, title: text, date: due });
     } else if (kind === 'event') {
       const title = $('#fTitle').value.trim(), date = $('#fDate').value, time = $('#fTime').value || ''; if (!title || !date) return;
       if (id) queueOp({ t: 'event.edit', eid: id, title, date, time }); else queueOp({ t: 'event.add', eid: 'm' + rid(), title, date, time });
@@ -229,6 +253,7 @@
     }
     const x = v.todos.find((t) => t.key === el.dataset.key);
     if (act === 'edit-todo' && x) return openTodo(x);
+    if (act === 'edit-notion' && x) return openNotion(x);
     if (act === 'edit-event') { const e = Object.values(v.byDate).flatMap((b) => b.events).find((q) => q.src === 'me' && q.id === el.dataset.eid); if (e) openEvent(e); return; }
     if (act === 'done' && x) queueOp(x.src === 'notion' ? { t: 'notion.done', pid: x.pid, prop: x.prop, done: true } : { t: 'todo.done', tid: x.id, done: true });
   }
