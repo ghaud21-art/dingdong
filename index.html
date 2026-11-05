@@ -143,8 +143,7 @@ footer a{color:var(--ink-2);font-weight:700}
   <div class="wrap">
     <a class="brand" href="#top" aria-label="딩동 처음으로"><img src="assets/logo.png" alt="" width="36" height="36"><b>dingdong</b></a>
     <nav class="links" aria-label="바로가기">
-      <a href="#features">기능</a><a href="#install">설치 방법</a><a href="#faq">자주 묻는 질문</a>
-      <a class="keep" href="https://github.com/ghaud21-art/dingdong/releases/latest">버전 기록</a>
+      <a href="#features">기능</a><a class="keep" href="#install">설치 방법</a><a href="#faq">자주 묻는 질문</a>
     </nav>
   </div>
 </header>
@@ -157,9 +156,10 @@ footer a{color:var(--ink-2);font-weight:700}
         <h1>오늘 필요한 건<br><em>딩동</em> 한 화면에</h1>
         <p class="lead">시간표, 급식, 학사일정, 할 일, 선생님 호출까지. 컴퓨터를 켜면 바탕화면에서 지금 이 시간과 오늘 할 일을 바로 보여 드려요.</p>
         <div class="cta">
-          <a class="btn primary" id="dl" href="https://github.com/ghaud21-art/dingdong/releases/latest"><svg class="i"><use href="#i-down"/></svg>딩동 최신 버전 다운로드</a>
+          <a class="btn primary" id="dl" href="#dl"><svg class="i"><use href="#i-down"/></svg>딩동 최신 버전 다운로드</a>
           <a class="btn ghost" href="#install">설치 방법 보기</a>
         </div>
+        <p id="dlmsg" role="status" style="display:none;margin:12px 0 0;color:var(--pink-ink);font-weight:700;font-size:14px"></p>
         <div class="meta" aria-live="polite"><span>Windows 10 · 11</span><span id="ver">최신 버전</span><span id="size">무료</span><span id="date"></span></div>
       </div>
       <div class="frame">
@@ -226,35 +226,46 @@ footer a{color:var(--ink-2);font-weight:700}
 <footer>
   <div class="wrap">
     <span>딩동 — 선생님을 위한 바탕화면 앱</span>
-    <a href="https://github.com/ghaud21-art/dingdong/releases/latest">모든 버전 보기</a>
     <span id="foot-ver"></span>
   </div>
 </footer>
 
 <script>
-// 최신 설치 파일 정보를 GitHub 릴리스에서 읽어 버튼에 연결한다. 못 읽어도 릴리스 페이지로 이어지니 버튼은 항상 동작한다.
+// 최신 설치 파일 정보는 같은 사이트의 latest.json(새 버전을 낼 때마다 자동 갱신)에서 읽는다. 못 읽으면 GitHub API로 한 번 더 시도한다.
 (function () {
   var REPO = 'ghaud21-art/dingdong';
   function $(s) { return document.querySelector(s); }
+  var ready = false;
   function fill(r) {
-    if (!r || !r.exe) return;
+    if (!r || !r.exe) return Promise.reject();
+    ready = true;
     $('#dl').href = r.exe;
-    $('#ver').textContent = r.tag.replace(/^v/i, '버전 ');
-    $('#size').textContent = Math.round(r.size / 1048576) + 'MB · 무료';
-    try { $('#date').textContent = new Date(r.date).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' }) + ' 공개'; } catch (e) {}
-    $('#foot-ver').textContent = '최신 ' + r.tag;
+    $('#dlmsg').style.display = 'none';
+    $('#ver').textContent = '버전 ' + String(r.tag || r.version).replace(/^v/i, '');
+    if (r.size) $('#size').textContent = Math.round(r.size / 1048576) + 'MB · 무료';
+    try { if (r.date) $('#date').textContent = new Date(r.date).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' }) + ' 공개'; } catch (e) {}
+    $('#foot-ver').textContent = '최신 ' + (r.tag || 'v' + r.version);
   }
-  try { var c = sessionStorage.getItem('dd-latest'); if (c) fill(JSON.parse(c)); } catch (e) {}
-  fetch('https://api.github.com/repos/' + REPO + '/releases/latest', { headers: { Accept: 'application/vnd.github+json' } })
+  function note(t) { var m = $('#dlmsg'); m.textContent = t; m.style.display = 'block'; }
+  $('#dl').addEventListener('click', function (e) {
+    if (ready) return;
+    e.preventDefault();
+    note('다운로드 주소를 불러오는 중이에요. 잠시 뒤에 다시 눌러 주세요.');
+  });
+  function fromApi() {
+    return fetch('https://api.github.com/repos/' + REPO + '/releases/latest', { headers: { Accept: 'application/vnd.github+json' } })
+      .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
+      .then(function (rel) {
+        var a = (rel.assets || []).filter(function (x) { return /\.exe$/i.test(x.name); })[0];
+        if (!a) return Promise.reject();
+        return { tag: rel.tag_name, date: rel.published_at, exe: a.browser_download_url, size: a.size };
+      });
+  }
+  fetch('latest.json', { cache: 'no-cache' })
     .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
-    .then(function (rel) {
-      var a = (rel.assets || []).filter(function (x) { return /\.exe$/i.test(x.name); })[0];
-      if (!a) return;
-      var info = { tag: rel.tag_name, date: rel.published_at, exe: a.browser_download_url, size: a.size };
-      fill(info);
-      try { sessionStorage.setItem('dd-latest', JSON.stringify(info)); } catch (e) {}
-    })
-    .catch(function () { /* 릴리스 페이지 링크로 대신한다 */ });
+    .then(fill)
+    .catch(function () { return fromApi().then(fill); })
+    .catch(function () { note('다운로드 주소를 불러오지 못했어요. 잠시 뒤 새로고침해 주세요.'); });
 })();
 </script>
 </body>
