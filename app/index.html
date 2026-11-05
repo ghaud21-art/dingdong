@@ -104,6 +104,17 @@ li.row.pend{opacity:.78}
 .gh.late{color:var(--pink-ink);background:var(--pink)}.gh.today{color:var(--accent-strong);background:var(--tint)}
 .gh span{margin-left:auto;color:var(--ink-3);font-weight:700}
 .more{display:block;width:100%;margin:6px 0 2px;padding:9px;border-radius:12px;background:var(--tint-2);color:var(--accent-strong);font-weight:800;font-size:13.5px}
+.sheet{max-height:92dvh;overflow-y:auto}
+.sheet select{width:100%;font:inherit;padding:11px 12px;border-radius:14px;border:1.5px solid var(--line);background:var(--tint-2);color:var(--ink)}
+.sheet input#fAdd{width:100%;font:inherit;padding:10px 12px;border-radius:14px;border:1.5px dashed var(--line);background:transparent;color:var(--ink);margin-top:8px}
+.bd{border:1.5px solid var(--line);border-radius:14px;padding:6px 8px;background:var(--tint-2)}
+.bl{display:flex;align-items:center;gap:8px;padding:3px 0}
+.bl .mk{color:var(--ink-3);width:12px;text-align:center;flex:none}
+.bl input[type=checkbox]{width:20px;height:20px;flex:none}
+.bl .bt{flex:1;min-width:0;font:inherit;border:0;border-bottom:1px solid transparent;background:transparent;color:var(--ink);padding:6px 2px}
+.bl .bt:focus{outline:0;border-bottom-color:var(--accent)}
+.bl .bt.hd{font-weight:800}
+.bl.ro{color:var(--ink-3);font-size:13px;padding:6px 2px}
 [hidden]{display:none!important}
 </style>
 </head>
@@ -111,7 +122,7 @@ li.row.pend{opacity:.78}
 <main id="app" aria-live="polite"></main>
 <div class="scrim" id="scrim" hidden><form class="sheet" id="sheet" autocomplete="off"></form></div>
 <nav class="tabs" id="tabs" hidden><div class="in">
-  <button data-tab="today" class="on">오늘</button><button data-tab="todo">할 일</button><button data-tab="cal">달력</button><button data-tab="more">더보기</button>
+  <button data-tab="today" class="on">오늘</button><button data-tab="cal">달력·할 일</button><button data-tab="more">더보기</button>
 </div></nav>
 <script src="ops.js"></script>
 <script src="view.js"></script>
