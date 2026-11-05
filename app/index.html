@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>딩동 — 폰으로 보기</title>
+<meta name="description" content="구글에 연결하면 PC 딩동의 시간표·할 일·일정을 폰에서 보고 고칠 수 있어요.">
+<meta name="theme-color" content="#f5f9ff">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+:root{--bg:#f5f9ff;--sheet:#fff;--tint:#e9f2fd;--tint-2:#f3f8ff;--ink:#2f4d7a;--ink-2:#5f7ba6;--ink-3:#8da4c6;--accent:#78a6e8;--accent-strong:#4f86d6;--line:#dbe7f7;--pink:#fde3ec;--pink-ink:#c2577c;--butter:#fdf3cf;--butter-ink:#94761f;--mint:#dff4ee;--mint-ink:#2f8a75;--peach:#feeadb;--peach-ink:#b06a36;--shadow:0 14px 30px -18px rgba(47,77,122,.45);--f:"Malgun Gothic","Apple SD Gothic Neo","Noto Sans KR",system-ui,sans-serif}
+@media (prefers-color-scheme:dark){:root{--bg:#11152a;--sheet:#181e36;--tint:#1f2846;--tint-2:#1b223d;--ink:#e4ecff;--ink-2:#a9bbe2;--ink-3:#7f92bb;--accent:#8fb6f2;--accent-strong:#a9c8f7;--line:#2a3456;--pink:#3d2436;--pink-ink:#f5b3cc;--butter:#38331f;--butter-ink:#efd98b;--mint:#1e3632;--mint-ink:#8fe0cb;--peach:#3b2c22;--peach-ink:#f3c39b;--shadow:0 14px 30px -18px rgba(0,0,0,.8);color-scheme:dark}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f);font-size:16px;line-height:1.55}
+body{min-height:100dvh;padding:0 0 calc(76px + env(safe-area-inset-bottom))}
+main{width:min(560px,100%);margin:0 auto;padding:calc(12px + env(safe-area-inset-top)) 16px 24px}
+header.top{display:flex;align-items:center;gap:10px;margin:4px 0 14px}
+header.top img{width:36px;height:36px;border-radius:12px}
+header.top h1{margin:0;font-size:22px;font-weight:800;color:var(--accent-strong)}
+header.top .sub{color:var(--ink-3);font-size:13px;font-weight:700}
+header.top button{margin-left:auto}
+button{font:inherit;cursor:pointer;border:0}
+.btn{background:var(--accent-strong);color:#fff;border-radius:999px;padding:13px 22px;font-weight:800;font-size:16px}
+@media (prefers-color-scheme:dark){.btn{color:#0f1730}}
+.btn.ghost{background:var(--sheet);color:var(--ink-2);border:1.5px solid var(--line)}
+.btn.sm{padding:8px 14px;font-size:13px}
+.card{background:var(--sheet);border:1px solid var(--line);border-radius:22px;padding:16px 18px;margin:0 0 12px;box-shadow:var(--shadow)}
+.card h2{margin:0 0 8px;font-size:14px;font-weight:800;color:var(--ink-2);display:flex;align-items:center;gap:8px}
+.card h2 small{margin-left:auto;font-weight:700;color:var(--ink-3)}
+.big{font-size:22px;font-weight:800;margin:0}
+.muted{color:var(--ink-3);font-size:13.5px}
+ul{list-style:none;margin:0;padding:0}
+li.row{display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-top:1px solid var(--line)}
+li.row:first-child{border-top:0}
+li.row time{flex:none;width:62px;color:var(--ink-3);font-size:13px;font-weight:700;padding-top:1px}
+li.row .t{flex:1;min-width:0;font-weight:700;overflow-wrap:anywhere}
+li.row small{display:block;color:var(--ink-3);font-weight:600;font-size:12.5px}
+.chip{flex:none;border-radius:999px;padding:2px 9px;font-size:11.5px;font-weight:800;background:var(--tint);color:var(--accent-strong)}
+.chip.group{background:var(--mint);color:var(--mint-ink)}.chip.me{background:var(--peach);color:var(--peach-ink)}.chip.notion{background:var(--tint);color:var(--accent-strong)}.chip.late{background:var(--pink);color:var(--pink-ink)}.chip.star{background:var(--butter);color:var(--butter-ink)}
+.lesson.now{background:var(--tint);border-radius:14px;padding-left:10px;padding-right:10px}
+.lesson.done .t{color:var(--ink-3);font-weight:600}
+.pill{display:inline-block;border-radius:999px;padding:3px 11px;background:var(--tint);color:var(--accent-strong);font-weight:800;font-size:12.5px}
+.empty{color:var(--ink-3);font-size:14px;padding:6px 0}
+.notice{background:var(--butter);color:var(--butter-ink);border-radius:16px;padding:11px 14px;font-weight:700;font-size:13.5px;margin:0 0 12px}
+.err{background:var(--pink);color:var(--pink-ink)}
+nav.tabs{position:fixed;left:0;right:0;bottom:0;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(12px);border-top:1px solid var(--line);display:flex;justify-content:center;padding:8px 8px calc(8px + env(safe-area-inset-bottom))}
+nav.tabs .in{display:flex;width:min(560px,100%);gap:4px}
+nav.tabs button{flex:1;background:none;border-radius:14px;padding:9px 0;font-weight:800;font-size:13px;color:var(--ink-3)}
+nav.tabs button.on{background:var(--tint);color:var(--accent-strong)}
+.welcome{text-align:center;padding:36px 6px}
+.welcome img{width:96px;height:96px;border-radius:26px;box-shadow:var(--shadow)}
+.welcome h2{font-size:24px;margin:18px 0 6px;color:var(--ink)}
+.welcome p{color:var(--ink-2);margin:0 0 22px}
+.steps{text-align:left;color:var(--ink-2);font-size:13.5px;margin:22px auto 0;max-width:340px}
+.steps b{color:var(--ink)}
+.ck{flex:none;width:26px;height:26px;border-radius:50%;border:2px solid var(--accent);background:var(--sheet);padding:0;margin-top:1px}
+.ck:active{background:var(--tint)}
+li.row.pend{opacity:.78}
+.chip.wait{background:var(--butter);color:var(--butter-ink)}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+.card h2 .add{margin-left:8px}
+.tap{cursor:pointer}
+.scrim{position:fixed;inset:0;background:rgba(20,30,55,.45);display:flex;align-items:flex-end;justify-content:center;z-index:20}
+.sheet{background:var(--sheet);width:min(560px,100%);border-radius:24px 24px 0 0;padding:20px 18px calc(20px + env(safe-area-inset-bottom));box-shadow:var(--shadow)}
+.sheet h3{margin:0 0 12px;font-size:17px}
+.sheet label{display:block;font-size:13px;font-weight:800;color:var(--ink-2);margin:10px 0 4px}
+.sheet input[type=text],.sheet input[type=date],.sheet input[type=time]{width:100%;font:inherit;padding:11px 12px;border-radius:14px;border:1.5px solid var(--line);background:var(--tint-2);color:var(--ink)}
+.sheet .chk{display:flex;align-items:center;gap:8px;font-size:15px;color:var(--ink);font-weight:700;margin:12px 0 0}
+.sheet .btns{display:flex;gap:8px;margin-top:18px;flex-wrap:wrap}
+.btn.danger{background:var(--pink);color:var(--pink-ink)}
+.mcal-h{display:flex;align-items:center;gap:6px;margin-bottom:6px}
+.mcal-h b{flex:1;text-align:center;font-size:16px}
+.mcal-h button{background:var(--tint);color:var(--accent-strong);border-radius:12px;min-width:38px;height:34px;font-weight:800;padding:0 8px}
+.mcal-w,.mcal-g{display:grid;grid-template-columns:repeat(7,1fr);text-align:center}
+.mcal-w span{font-size:12px;font-weight:800;color:var(--ink-3);padding:4px 0}
+.mcal-w span:first-child,.mcal-g .sun{color:var(--pink-ink)}
+.mcal-g button{background:none;border-radius:14px;height:46px;padding:4px 0 2px;font-weight:700;font-size:14.5px;color:var(--ink);display:flex;flex-direction:column;align-items:center;gap:3px;position:relative}
+.mcal-g button.out{color:var(--ink-3);opacity:.45}
+.mcal-g button.today{box-shadow:inset 0 0 0 1.5px var(--accent)}
+.mcal-g button.sel{background:var(--accent-strong);color:#fff}
+@media (prefers-color-scheme:dark){.mcal-g button.sel{color:#0f1730}}
+.mcal-g .dots{display:flex;gap:3px;height:6px}
+.mcal-g .dot{width:6px;height:6px;border-radius:50%;background:var(--accent)}
+.mcal-g .dot.e{background:var(--peach-ink)}
+.mcal-g button.sel .dot{background:#fff}
+@media (prefers-color-scheme:dark){.mcal-g button.sel .dot{background:#0f1730}}
+.legend{display:flex;gap:12px;margin-top:6px;color:var(--ink-3);font-size:12px;font-weight:700}
+.legend i{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--accent);margin-right:4px}
+.legend i.e{background:var(--peach-ink)}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<main id="app" aria-live="polite"></main>
+<div class="scrim" id="scrim" hidden><form class="sheet" id="sheet" autocomplete="off"></form></div>
+<nav class="tabs" id="tabs" hidden><div class="in">
+  <button data-tab="today" class="on">오늘</button><button data-tab="todo">할 일</button><button data-tab="cal">달력</button><button data-tab="more">더보기</button>
+</div></nav>
+<script src="ops.js"></script>
+<script src="view.js"></script>
+<script src="app.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer onload="window.__gsi=1;window.dispatchEvent(new Event('gsi-ready'))"></script>
+</body>
+</html>
