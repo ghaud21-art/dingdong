@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>딩동 개인정보처리방침</title>
+<meta name="description" content="딩동 앱이 어떤 정보를 어디에 저장하고, 어떤 외부 서비스와 통신하는지 알려 드려요.">
+<link rel="icon" href="assets/icon.png">
+<style>
+:root{--bg:#f5f9ff;--sheet:#fff;--ink:#2f4d7a;--ink-2:#5f7ba6;--line:#dbe7f7;--accent:#4f86d6;--tint:#e9f2fd}
+@media (prefers-color-scheme:dark){:root{--bg:#11152a;--sheet:#181e36;--ink:#e4ecff;--ink-2:#a9bbe2;--line:#2a3456;--accent:#a9c8f7;--tint:#1f2846;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Malgun Gothic","Apple SD Gothic Neo",system-ui,sans-serif;line-height:1.75;font-size:16px}
+main{width:min(760px,calc(100% - 32px));margin:0 auto;padding:40px 0 64px}
+a{color:var(--accent)}
+.brand{display:flex;align-items:center;gap:10px;margin-bottom:24px;text-decoration:none;color:var(--ink);font-weight:800}
+.brand img{width:36px;height:36px;border-radius:12px}
+h1{font-size:clamp(26px,5vw,34px);margin:0 0 6px}
+.date{color:var(--ink-2);margin:0 0 28px;font-size:14px}
+h2{font-size:19px;margin:32px 0 8px}
+.card{background:var(--sheet);border:1px solid var(--line);border-radius:20px;padding:6px 22px 18px}
+ul{padding-left:20px;margin:8px 0}
+li{margin:4px 0}
+table{border-collapse:collapse;width:100%;font-size:14.5px;margin:8px 0}
+th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+th{background:var(--tint)}
+.wrap{overflow-x:auto}
+</style>
+</head>
+<body>
+<main>
+  <a class="brand" href="./"><img src="assets/logo.png" alt="" width="36" height="36">딩동</a>
+  <h1>개인정보처리방침</h1>
+  <p class="date">2026년 11월 5일 시행</p>
+
+  <div class="card">
+    <h2>1. 딩동은 어떤 앱인가요?</h2>
+    <p>딩동은 선생님이 자기 Windows 컴퓨터에 설치해서 쓰는 바탕화면 앱이에요. 시간표, 급식, 학사일정, 할 일, 선생님 호출 알림, 생기부 초안 도우미를 한 화면에서 보여 줘요. 딩동을 만든 사람이 운영하는 별도의 서버나 데이터베이스는 없어요.</p>
+
+    <h2>2. 어떤 정보를 어디에 저장하나요?</h2>
+    <ul>
+      <li>시간표, 할 일, 일정, 설정, 생기부 명단과 초안은 <b>선생님의 컴퓨터에만</b> 저장돼요.</li>
+      <li>노션 연결 키, Gemini 키, 호출 로그인 정보 같은 비밀 값은 Windows의 보호 기능(DPAPI)으로 암호화해서 그 컴퓨터에만 저장해요. 백업 파일에는 넣지 않아요.</li>
+      <li>생기부 명단과 초안은 이 컴퓨터 안에서 암호화해서 저장해요. 내보낼 때는 선생님이 정한 비밀번호로 암호화한 파일만 만들어요.</li>
+      <li>딩동을 만든 사람은 이 정보를 받거나 볼 수 없어요.</li>
+    </ul>
+
+    <h2>3. 외부 서비스와 통신하는 경우</h2>
+    <p>아래 서비스는 선생님이 해당 기능을 직접 켰을 때만 통신해요.</p>
+    <div class="wrap"><table>
+      <tr><th>서비스</th><th>보내는 내용</th></tr>
+      <tr><td>나이스 교육정보 개방 포털</td><td>선생님이 고른 학교의 급식·학사일정 조회</td></tr>
+      <tr><td>Open-Meteo</td><td>선생님이 고른 지역의 날씨 조회</td></tr>
+      <tr><td>컴시간(비공식)</td><td>학교·선생님 선택을 위한 시간표 조회</td></tr>
+      <tr><td>노션</td><td>선생님이 연결한 노션 페이지의 할 일 읽기·쓰기</td></tr>
+      <tr><td>Google Gemini</td><td>선생님이 입력한 활동 글(생기부 초안) 또는 사진(일정 읽기). 생기부 초안을 만들 때 명단에 있는 학생 이름은 "학생"으로 바꿔서 보내요. 선생님이 직접 발급한 키를 써요.</td></tr>
+      <tr><td>선생님 호출 서버(Firebase)</td><td>선생님 호출 확인과 처리 기록</td></tr>
+      <tr><td>Google 드라이브·시트</td><td>선생님이 구글 연동을 켠 경우에만, 그 선생님 본인의 구글 계정에 설정과 백업을 저장해요. 앱이 만든 파일과 숨김 앱 폴더에만 접근하고, 다른 파일은 보지 않아요.</td></tr>
+    </table></div>
+    <p>각 서비스에 보낸 정보는 해당 서비스의 약관과 개인정보 방침에 따라 처리돼요.</p>
+
+    <h2>4. 구글 계정 정보</h2>
+    <ul>
+      <li>구글 연동을 켜면 로그인 승인 정보(토큰)를 그 컴퓨터에 암호화해서 저장해요.</li>
+      <li>요청하는 권한은 앱 전용 숨김 폴더(drive.appdata)와 앱이 만든 파일(drive.file)뿐이에요.</li>
+      <li>구글 연동은 설정에서 언제든 끌 수 있고, 구글 계정 설정의 "타사 앱 액세스"에서 권한을 취소할 수 있어요.</li>
+    </ul>
+
+    <h2>5. 학생 정보를 다루는 선생님께</h2>
+    <p>생기부 도우미에 학생 명단과 활동 기록을 넣는 것은 선생님 책임 아래 이뤄져요. 소속 학교와 교육청의 개인정보 보호 지침을 확인해서 쓰세요. AI가 만든 초안은 참고용이며, 반드시 선생님이 확인하고 고쳐야 해요.</p>
+
+    <h2>6. 보관과 삭제</h2>
+    <ul>
+      <li>정보는 선생님이 지우기 전까지 그 컴퓨터에 남아요. 앱을 지워도 저장 폴더는 남아 있으니 완전히 지우려면 그 폴더도 지워 주세요.</li>
+      <li>구글 드라이브·시트에 저장한 내용은 선생님이 구글 드라이브에서 직접 지울 수 있어요.</li>
+    </ul>
+
+    <h2>7. 방침이 바뀔 때</h2>
+    <p>내용이 바뀌면 이 페이지를 고쳐서 날짜를 새로 적어요.</p>
+
+    <h2>8. 문의</h2>
+    <p>딩동을 전해 준 선생님이나 관리하는 분께 문의해 주세요.</p>
+  </div>
+</main>
+</body>
+</html>
