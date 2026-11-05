@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>딩동 — 선생님 바탕화면 앱</title>
+<meta name="description" content="시간표·급식·일정·할 일·선생님 호출을 바탕화면 한 화면에서. 선생님을 위한 Windows 앱 딩동을 받아 보세요.">
+<meta name="theme-color" content="#f5f9ff">
+<meta property="og:title" content="딩동 — 선생님 바탕화면 앱">
+<meta property="og:description" content="시간표·급식·일정·할 일·선생님 호출을 바탕화면 한 화면에서.">
+<meta property="og:image" content="https://ghaud21-art.github.io/dingdong/assets/shot-home.jpg">
+<link rel="icon" href="assets/icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Gothic+A1:wght@400;500;600;700;800&display=swap">
+<style>
+/* 앱과 같은 파스텔 다이어리 톤. 색은 토큰으로 두고 다크 모드에서도 같은 구조로 바뀐다. */
+:root{
+  --bg:#f5f9ff; --sheet:#ffffff; --tint:#e9f2fd; --tint-2:#f3f8ff;
+  --ink:#2f4d7a; --ink-2:#6a87b3; --ink-3:#8da4c6;
+  --accent:#78a6e8; --accent-strong:#4f86d6; --accent-ink:#ffffff;
+  --line:#dbe7f7; --ok:#3fae8f; --pink:#fde3ec; --pink-ink:#c2577c; --butter:#fdf3cf; --butter-ink:#94761f; --mint:#dff4ee; --mint-ink:#2f8a75; --peach:#feeadb; --peach-ink:#b06a36;
+  --holo:linear-gradient(125deg,#fff6c9 0%,#cfeefe 28%,#e5d6ff 52%,#ffdcee 74%,#d6fbef 100%);
+  --shadow:0 24px 60px -28px rgba(47,77,122,.45);
+  --f-display:"Poppins","Gothic A1",system-ui,sans-serif;
+  --f-body:"Gothic A1","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#11152a; --sheet:#181e36; --tint:#1f2846; --tint-2:#1b223d;
+  --ink:#e4ecff; --ink-2:#a9bbe2; --ink-3:#7f92bb;
+  --accent:#8fb6f2; --accent-strong:#a9c8f7; --accent-ink:#0f1730;
+  --line:#2a3456; --ok:#79d9bd; --pink:#3d2436; --pink-ink:#f5b3cc; --butter:#38331f; --butter-ink:#efd98b; --mint:#1e3632; --mint-ink:#8fe0cb; --peach:#3b2c22; --peach-ink:#f3c39b;
+  --shadow:0 24px 60px -28px rgba(0,0,0,.85);
+  color-scheme:dark}}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.65;-webkit-font-smoothing:antialiased}
+a{color:inherit}
+:focus-visible{outline:3px solid var(--accent);outline-offset:3px;border-radius:10px}
+svg.i{width:22px;height:22px;flex:none;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.wrap{width:min(1080px,calc(100% - 40px));margin:0 auto}
+
+header.top{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 82%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+header .wrap{display:flex;align-items:center;gap:16px;height:64px}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none}
+.brand img{width:36px;height:36px;border-radius:12px;box-shadow:var(--shadow)}
+.brand b{font-family:var(--f-display);font-weight:800;font-size:20px;color:var(--accent-strong);letter-spacing:-.01em}
+nav.links{margin-left:auto;display:flex;gap:6px}
+nav.links a{text-decoration:none;font-weight:700;font-size:14px;color:var(--ink-2);padding:8px 14px;border-radius:999px}
+nav.links a:hover{background:var(--tint);color:var(--accent-strong)}
+
+.hero{padding:64px 0 40px}
+.hero .wrap{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:48px;align-items:center}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;background:var(--tint);color:var(--accent-strong);font-weight:800;font-size:13px;border-radius:999px;padding:6px 14px}
+.eyebrow i{width:8px;height:8px;border-radius:50%;background:var(--holo)}
+h1{font-family:var(--f-display);font-weight:800;font-size:clamp(34px,5.2vw,56px);line-height:1.12;letter-spacing:-.025em;margin:18px 0 14px;text-wrap:balance}
+h1 em{font-style:normal;color:var(--accent-strong)}
+.lead{font-size:18px;color:var(--ink-2);margin:0 0 28px;max-width:34em;text-wrap:pretty}
+.cta{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.btn{display:inline-flex;align-items:center;gap:10px;border:0;border-radius:999px;font:inherit;font-weight:800;text-decoration:none;cursor:pointer}
+.btn.primary{background:var(--accent-strong);color:#fff;padding:16px 28px;font-size:18px;box-shadow:0 14px 30px -14px var(--accent-strong)}
+@media (prefers-color-scheme:dark){.btn.primary{color:var(--accent-ink)}}
+.btn.primary:hover{filter:brightness(1.06);transform:translateY(-1px)}
+.btn.ghost{background:var(--sheet);color:var(--ink-2);padding:14px 22px;border:1.5px solid var(--line);font-size:16px}
+.btn.ghost:hover{border-color:var(--accent);color:var(--accent-strong)}
+.meta{margin-top:16px;display:flex;flex-wrap:wrap;gap:6px 14px;color:var(--ink-3);font-size:14px;font-weight:600}
+.meta span::before{content:"";display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--ink-3);margin-right:8px;vertical-align:middle;opacity:.6}
+.meta span:first-child::before{display:none}
+.meta span:empty{display:none}
+
+.frame{position:relative;background:var(--sheet);border:1px solid var(--line);border-radius:22px;padding:10px;box-shadow:var(--shadow)}
+.frame .bar{display:flex;gap:6px;padding:4px 8px 10px}
+.frame .bar i{width:10px;height:10px;border-radius:50%;background:var(--line)}
+.frame img{display:block;width:100%;height:auto;border-radius:12px}
+.frame .star{position:absolute;right:-22px;top:-28px;width:92px;height:92px;pointer-events:none;animation:float 7s ease-in-out infinite;filter:drop-shadow(0 8px 14px rgba(120,140,200,.3))}
+@keyframes float{50%{transform:translateY(-6px) rotate(8deg)}}
+
+section{padding:72px 0}
+section.alt{background:var(--tint-2);border-block:1px solid var(--line)}
+h2{font-family:var(--f-display);font-weight:800;font-size:clamp(26px,3.4vw,36px);letter-spacing:-.02em;margin:0 0 10px;text-wrap:balance}
+.sub{color:var(--ink-2);margin:0 0 36px;max-width:40em}
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.card{background:var(--sheet);border:1px solid var(--line);border-radius:22px;padding:22px}
+.card .ico{width:46px;height:46px;border-radius:15px;display:grid;place-items:center;margin-bottom:14px}
+.card h3{margin:0 0 6px;font-size:17px;font-weight:800}
+.card p{margin:0;color:var(--ink-2);font-size:14.5px}
+.c1 .ico{background:var(--tint);color:var(--accent-strong)} .c2 .ico{background:var(--butter);color:var(--butter-ink)} .c3 .ico{background:var(--mint);color:var(--mint-ink)}
+.c4 .ico{background:var(--pink);color:var(--pink-ink)} .c5 .ico{background:var(--peach);color:var(--peach-ink)} .c6 .ico{background:var(--tint);color:var(--accent-strong)}
+
+.shots{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+.shots figure{margin:0}
+.shots figcaption{margin-top:10px;color:var(--ink-2);font-size:14px;font-weight:600;text-align:center}
+
+.steps{counter-reset:s;list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.steps li{counter-increment:s;background:var(--sheet);border:1px solid var(--line);border-radius:22px;padding:22px 22px 22px 74px;position:relative}
+.steps li::before{content:counter(s);position:absolute;left:22px;top:22px;width:36px;height:36px;border-radius:50%;background:var(--accent-strong);color:#fff;display:grid;place-items:center;font-family:var(--f-display);font-weight:800}
+@media (prefers-color-scheme:dark){.steps li::before{color:var(--accent-ink)}}
+.steps b{display:block;font-size:17px;margin-bottom:4px}
+.steps p{margin:0;color:var(--ink-2);font-size:14.5px}
+.note{margin-top:18px;background:var(--butter);color:var(--butter-ink);border-radius:18px;padding:14px 18px;font-weight:600;font-size:14.5px}
+
+.faq{display:grid;gap:10px;max-width:760px}
+details{background:var(--sheet);border:1px solid var(--line);border-radius:18px;padding:4px 20px}
+summary{cursor:pointer;font-weight:800;padding:14px 0;list-style:none;display:flex;justify-content:space-between;gap:12px}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"+";color:var(--accent-strong);font-family:var(--f-display);font-weight:800}
+details[open] summary::after{content:"–"}
+details p{margin:0 0 16px;color:var(--ink-2);font-size:15px}
+
+footer{padding:40px 0 56px;color:var(--ink-3);font-size:14px;border-top:1px solid var(--line)}
+footer .wrap{display:flex;flex-wrap:wrap;gap:10px 24px;align-items:center}
+footer a{color:var(--ink-2);font-weight:700}
+
+@media (max-width:860px){
+  .hero .wrap{grid-template-columns:1fr;gap:36px}
+  .grid,.steps,.shots{grid-template-columns:1fr}
+  .hero{padding-top:40px}
+  nav.links a:not(.keep){display:none}
+  .frame .star{right:-8px;width:70px;height:70px}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <linearGradient id="holo" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff6c9"/><stop offset=".3" stop-color="#cfeefe"/><stop offset=".55" stop-color="#e5d6ff"/><stop offset=".78" stop-color="#ffdcee"/><stop offset="1" stop-color="#d6fbef"/></linearGradient>
+    <radialGradient id="shine" cx=".35" cy=".3" r=".5"><stop offset="0" stop-color="#fff" stop-opacity=".95"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+  </defs>
+  <symbol id="star" viewBox="0 0 100 100"><path d="M50 6c5 0 8 16 13 22s21 6 23 11-11 15-13 22 5 23 0 27-19-7-23-7-18 11-23 7 2-20 0-27-15-17-13-22 18-5 23-11S45 6 50 6z" fill="url(#holo)" stroke="rgba(255,255,255,.9)" stroke-width="2"/><path d="M50 6c5 0 8 16 13 22s21 6 23 11-11 15-13 22 5 23 0 27-19-7-23-7-18 11-23 7 2-20 0-27-15-17-13-22 18-5 23-11S45 6 50 6z" fill="url(#shine)"/></symbol>
+  <symbol id="i-down" viewBox="0 0 24 24"><path d="M12 4v12M6 11l6 6 6-6"/><path d="M5 20h14"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+  <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 10h18M3 15h18M9 4v16M15 4v16"/></symbol>
+  <symbol id="i-bowl" viewBox="0 0 24 24"><path d="M3 12h18a9 9 0 01-18 0z"/><path d="M8 8c0-2 2-2 2-4M13 8c0-2 2-2 2-4"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="4"/><path d="M8 12l3 3 5-6"/></symbol>
+  <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 16V11a6 6 0 0112 0v5l2 2H4z"/><path d="M10 20a2 2 0 004 0"/></symbol>
+  <symbol id="i-edit" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13 7l4 4"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/></symbol>
+  <symbol id="i-cal" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></symbol>
+</svg>
+
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="#top" aria-label="딩동 처음으로"><img src="assets/logo.png" alt="" width="36" height="36"><b>dingdong</b></a>
+    <nav class="links" aria-label="바로가기">
+      <a href="#features">기능</a><a href="#install">설치 방법</a><a href="#faq">자주 묻는 질문</a>
+      <a class="keep" href="https://github.com/ghaud21-art/dingdong/releases/latest">버전 기록</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+  <section class="hero" style="padding-bottom:40px">
+    <div class="wrap">
+      <div>
+        <span class="eyebrow"><i></i>선생님을 위한 Windows 바탕화면 앱</span>
+        <h1>오늘 필요한 건<br><em>딩동</em> 한 화면에</h1>
+        <p class="lead">시간표, 급식, 학사일정, 할 일, 선생님 호출까지. 컴퓨터를 켜면 바탕화면에서 지금 이 시간과 오늘 할 일을 바로 보여 드려요.</p>
+        <div class="cta">
+          <a class="btn primary" id="dl" href="https://github.com/ghaud21-art/dingdong/releases/latest"><svg class="i"><use href="#i-down"/></svg>딩동 최신 버전 다운로드</a>
+          <a class="btn ghost" href="#install">설치 방법 보기</a>
+        </div>
+        <div class="meta" aria-live="polite"><span>Windows 10 · 11</span><span id="ver">최신 버전</span><span id="size">무료</span><span id="date"></span></div>
+      </div>
+      <div class="frame">
+        <div class="bar" aria-hidden="true"><i></i><i></i><i></i></div>
+        <img src="assets/shot-home.jpg" width="800" height="544" alt="딩동 첫 화면: 지금 이 시간, 시계, 날씨, 일정, 주간 시간표가 한 화면에 보여요">
+        <svg class="star" viewBox="0 0 100 100" aria-hidden="true"><use href="#star"/></svg>
+      </div>
+    </div>
+  </section>
+
+  <section id="features" class="alt">
+    <div class="wrap">
+      <h2>선생님의 하루에 맞춘 기능</h2>
+      <p class="sub">필요한 것만 켜고, 쓰지 않는 카드는 끄고, 순서도 마음대로 바꿀 수 있어요.</p>
+      <div class="grid">
+        <article class="card c1"><div class="ico"><svg class="i"><use href="#i-clock"/></svg></div><h3>지금 이 시간</h3><p>지금이 몇 교시인지, 몇 분 남았는지, 다음 수업은 무엇인지 한눈에. 켜면 오늘의 비서가 할 일·수업·급식을 먼저 알려 줘요.</p></article>
+        <article class="card c2"><div class="ico"><svg class="i"><use href="#i-grid"/></svg></div><h3>시간표 자동 입력</h3><p>컴시간에서 내 이름을 고르면 주간 시간표가 채워져요. 직접 고치고 교시 시간도 학교에 맞게 바꿀 수 있어요.</p></article>
+        <article class="card c3"><div class="ico"><svg class="i"><use href="#i-bowl"/></svg></div><h3>급식 · 학사일정 · 날씨</h3><p>학교를 고르면 나이스의 급식과 학사일정이, 동네를 고르면 날씨와 미세먼지가 바로 나와요.</p></article>
+        <article class="card c4"><div class="ico"><svg class="i"><use href="#i-check"/></svg></div><h3>할 일 · 달력 · 노션 연동</h3><p>할 일에 중요 표시를 하고 달력에서 날짜를 끌어 옮겨요. 노션을 연결하면 딩동에서 적은 할 일이 노션에도 만들어져요.</p></article>
+        <article class="card c5"><div class="ico"><svg class="i"><use href="#i-bell"/></svg></div><h3>선생님 호출 알림</h3><p>교무실 앞 태블릿에서 학생이 부르면 이 컴퓨터에 알림과 소리로 알려 드려요. 창을 닫아 두어도 받아요.</p></article>
+        <article class="card c6"><div class="ico"><svg class="i"><use href="#i-edit"/></svg></div><h3>생기부 초안 도우미</h3><p>학급 명단을 넣고 학생별 핵심 활동을 적으면 명사형 문체(~함·~임)의 초안을 만들어 줘요. 학생 정보는 이 PC에만 저장돼요.</p></article>
+      </div>
+    </div>
+  </section>
+
+  <section id="shots">
+    <div class="wrap">
+      <h2>이런 모습이에요</h2>
+      <p class="sub">파스텔 다이어리 느낌의 화면에서 색 테마 4가지와 어두운 화면도 고를 수 있어요.</p>
+      <div class="shots">
+        <figure><div class="frame"><img loading="lazy" src="assets/shot-home2.jpg" width="800" height="537" alt="할 일, 오늘 급식, 선생님 호출, 업무 바로가기 카드"><svg class="star" viewBox="0 0 100 100" aria-hidden="true" style="display:none"></svg></div><figcaption>할 일 · 급식 · 호출 · 업무 바로가기</figcaption></figure>
+        <figure><div class="frame"><img loading="lazy" src="assets/shot-record.jpg" width="800" height="537" alt="생기부 화면: 학급 명단과 핵심 활동, 명사형으로 쓴 초안"><svg class="star" viewBox="0 0 100 100" aria-hidden="true" style="display:none"></svg></div><figcaption>생기부 초안 도우미 (예시 화면)</figcaption></figure>
+      </div>
+    </div>
+  </section>
+
+  <section id="install" class="alt">
+    <div class="wrap">
+      <h2>설치는 1분이면 돼요</h2>
+      <p class="sub">관리자 권한이 필요 없고, 설치가 끝나면 바탕화면에 바로가기가 생겨요.</p>
+      <ol class="steps">
+        <li><b>설치 파일 받기</b><p>위의 <b style="display:inline">딩동 최신 버전 다운로드</b> 버튼을 눌러 파일을 받아요.</p></li>
+        <li><b>더블클릭해서 설치</b><p>받은 파일을 두 번 누르면 설치가 시작되고, 끝나면 딩동이 저절로 열려요.</p></li>
+        <li><b>학교와 동네 고르기</b><p>설정에서 학교와 날씨 지역을 고르면 급식·학사일정·날씨가 채워져요.</p></li>
+      </ol>
+      <p class="note">처음 실행할 때 "Windows의 PC 보호" 화면이 나오면 <b>추가 정보 → 실행</b>을 눌러 주세요. 코드 서명이 없는 앱이라 나오는 안내예요.</p>
+    </div>
+  </section>
+
+  <section id="faq">
+    <div class="wrap">
+      <h2>자주 묻는 질문</h2>
+      <div class="faq" style="margin-top:24px">
+        <details><summary>무료인가요?</summary><p>네, 무료예요. 다만 사진으로 일정 읽기나 생기부 초안 같은 AI 기능은 선생님이 직접 발급한 Google Gemini 키가 있어야 쓸 수 있어요.</p></details>
+        <details><summary>내 데이터는 어디에 저장되나요?</summary><p>시간표·할 일·일정·설정은 선생님의 컴퓨터에만 저장돼요. 재부팅하면 초기화되는 학교 PC라면 설정에서 저장 폴더를 D: 드라이브나 USB로 바꾸고, 백업 파일로 내보내 둘 수 있어요.</p></details>
+        <details><summary>학생 정보는 안전한가요?</summary><p>생기부 명단과 초안은 이 PC 안에서 암호화해서 저장하고, 설정 백업에는 넣지 않아요. AI 초안을 만들 때는 선생님이 적은 핵심 활동 글만 보내고, 명단에 있는 학생 이름은 "학생"으로 바꿔서 보내요. 처음 사용할 때 안내를 보여 드려요.</p></details>
+        <details><summary>새 버전은 어떻게 받나요?</summary><p>앱이 켜질 때와 6시간마다 새 버전을 확인해서 알아서 받아 둬요. 화면 위에 "지금 다시 시작"이 나오면 눌러 주세요.</p></details>
+        <details><summary>어떻게 지우나요?</summary><p>Windows 설정의 앱 목록에서 "딩동"을 지우면 돼요. 저장된 데이터 폴더는 따로 남아 있으니, 완전히 지우려면 그 폴더도 지워 주세요.</p></details>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>딩동 — 선생님을 위한 바탕화면 앱</span>
+    <a href="https://github.com/ghaud21-art/dingdong/releases/latest">모든 버전 보기</a>
+    <span id="foot-ver"></span>
+  </div>
+</footer>
+
+<script>
+// 최신 설치 파일 정보를 GitHub 릴리스에서 읽어 버튼에 연결한다. 못 읽어도 릴리스 페이지로 이어지니 버튼은 항상 동작한다.
+(function () {
+  var REPO = 'ghaud21-art/dingdong';
+  function $(s) { return document.querySelector(s); }
+  function fill(r) {
+    if (!r || !r.exe) return;
+    $('#dl').href = r.exe;
+    $('#ver').textContent = r.tag.replace(/^v/i, '버전 ');
+    $('#size').textContent = Math.round(r.size / 1048576) + 'MB · 무료';
+    try { $('#date').textContent = new Date(r.date).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' }) + ' 공개'; } catch (e) {}
+    $('#foot-ver').textContent = '최신 ' + r.tag;
+  }
+  try { var c = sessionStorage.getItem('dd-latest'); if (c) fill(JSON.parse(c)); } catch (e) {}
+  fetch('https://api.github.com/repos/' + REPO + '/releases/latest', { headers: { Accept: 'application/vnd.github+json' } })
+    .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
+    .then(function (rel) {
+      var a = (rel.assets || []).filter(function (x) { return /\.exe$/i.test(x.name); })[0];
+      if (!a) return;
+      var info = { tag: rel.tag_name, date: rel.published_at, exe: a.browser_download_url, size: a.size };
+      fill(info);
+      try { sessionStorage.setItem('dd-latest', JSON.stringify(info)); } catch (e) {}
+    })
+    .catch(function () { /* 릴리스 페이지 링크로 대신한다 */ });
+})();
+</script>
+</body>
+</html>
