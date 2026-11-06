@@ -54,10 +54,11 @@
     const tt = Array.isArray(S.timetable) ? S.timetable : [];
     const lessons = [];
     if (wd >= 1 && wd <= 5) {
+      const ovDay = (S.ttOverrides && typeof S.ttOverrides === 'object' && S.ttOverrides[today]) || {}; // PC에서 "이 날짜만" 바꾼 수업
       tt.forEach((row, i) => {
-        const c = lessonText(row && row[wd - 1]); if (!c) return;
+        const chg = Object.prototype.hasOwnProperty.call(ovDay, i), c = lessonText(chg ? ovDay[i] : row && row[wd - 1]); if (!c) return;
         const b = bell[i] || [], s = toMin(b[0]), e = toMin(b[1]);
-        lessons.push({ period: i + 1, text: c, start: b[0] || '', end: b[1] || '', state: s < 0 ? 'later' : mins >= e ? 'done' : mins >= s ? 'now' : 'later' });
+        lessons.push({ changed: chg, period: i + 1, text: c, start: b[0] || '', end: b[1] || '', state: s < 0 ? 'later' : mins >= e ? 'done' : mins >= s ? 'now' : 'later' });
       });
       const nx = lessons.find((l) => l.state === 'later'); if (nx && !lessons.some((l) => l.state === 'now')) nx.state = 'next';
     }

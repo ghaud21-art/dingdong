@@ -184,7 +184,7 @@
   }
   function sections(v) {
     const lessons = v.lessons.length
-      ? `<ul>${v.lessons.map((l) => li(`${l.period}교시`, `${esc(l.text)}<small>${esc(l.start)} – ${esc(l.end)}</small>`, l.state === 'now' ? '<span class="chip">지금</span>' : l.state === 'next' ? '<span class="chip">다음</span>' : '', 'lesson ' + l.state)).join('')}</ul>`
+      ? `<ul>${v.lessons.map((l) => li(`${l.period}교시`, `${esc(l.text)}<small>${esc(l.start)} – ${esc(l.end)}</small>`, (l.changed ? '<span class="chip late">변경</span>' : '') + (l.state === 'now' ? '<span class="chip">지금</span>' : l.state === 'next' ? '<span class="chip">다음</span>' : ''), 'lesson ' + l.state)).join('')}</ul>`
       : '<div class="empty">오늘은 수업이 없어요</div>';
     return {
       today: `
