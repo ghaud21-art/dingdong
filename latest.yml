@@ -1,0 +1,8 @@
+version: 0.16.3
+files:
+  - url: https://github.com/ghaud21-art/dingdong/releases/download/v0.16.3/Dingdong-Setup-0.16.3.exe
+    sha512: VqVunXX/BqjQ+baMxEYjg3yzy+aHxGal3Sj6eJcZ4AdK1ckEEHLo294ihHAbueyXUsyuUarSi1PBj0JJar/y9Q==
+    size: 122792595
+path: https://github.com/ghaud21-art/dingdong/releases/download/v0.16.3/Dingdong-Setup-0.16.3.exe
+sha512: VqVunXX/BqjQ+baMxEYjg3yzy+aHxGal3Sj6eJcZ4AdK1ckEEHLo294ihHAbueyXUsyuUarSi1PBj0JJar/y9Q==
+releaseDate: '2026-11-09T05:55:47.359Z'
