@@ -1,5 +1,5 @@
 // 딩동 폰 보기: 화면 파일만 저장해 두어 인터넷이 없어도 열린다(데이터는 앱이 이 폰의 저장소에 따로 보관).
-const CACHE = 'dd-app-v3';
+const CACHE = 'dd-app-v4';
 const SHELL = ['./', 'index.html', 'app.js', 'view.js', 'ops.js', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png'];
 self.addEventListener('install', (e) => { e.waitUntil(caches.open(CACHE).then((c) => Promise.all(SHELL.map((u) => fetch(new Request(u, { cache: 'reload' })).then((r) => { if (r.ok) return c.put(u, r); })))).then(() => self.skipWaiting())); });
 self.addEventListener('activate', (e) => { e.waitUntil(caches.keys().then((ks) => Promise.all(ks.filter((k) => k !== CACHE).map((k) => caches.delete(k)))).then(() => self.clients.claim())); });

@@ -7,7 +7,7 @@
   const SCOPE = 'https://www.googleapis.com/auth/drive.appdata';
   const DOC = 'dingdong-settings.json';
   const KEY = { payload: 'dd.payload', at: 'dd.at', granted: 'dd.granted', tab: 'dd.tab', pending: 'dd.pending', failed: 'dd.failed' };
-  const APP_VER = '2026-11-05 버튼수정'; // 화면 버전(더보기에 표시: 폰이 새 화면을 받았는지 확인용)
+  const APP_VER = '2026-11-12 새 디자인'; // 화면 버전(더보기에 표시: 폰이 새 화면을 받았는지 확인용)
   const V = window.DDMobile;
   const $ = (s) => document.querySelector(s);
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -188,8 +188,8 @@
       : '<div class="empty">오늘은 수업이 없어요</div>';
     return {
       today: `
-        <section class="card"><h2>오늘 수업 <small>${v.lessons.length ? v.lessons.length + '시간' : ''}</small></h2>${lessons}</section>
-        <section class="card"><h2>오늘 할 일 <small>${v.todayTodos.length ? v.todayTodos.length + '개' : ''}</small>${addBtn('add-todo', '할 일')}</h2>${v.todayTodos.length ? `${todoList(v.todayTodos.slice(0, 5))}${v.todayTodos.length > 5 ? `<div class="muted">외 ${v.todayTodos.length - 5}개 — 할 일 탭에서 볼 수 있어요</div>` : ''}` : '<div class="empty">오늘 할 일이 없어요</div>'}</section>
+        <section class="card tape"><h2>오늘 수업 <small>${v.lessons.length ? v.lessons.length + '시간' : ''}</small></h2>${lessons}</section>
+        <section class="card tape"><h2>오늘 할 일 <small>${v.todayTodos.length ? v.todayTodos.length + '개' : ''}</small>${addBtn('add-todo', '할 일')}</h2>${v.todayTodos.length ? `${todoList(v.todayTodos.slice(0, 5))}${v.todayTodos.length > 5 ? `<div class="muted">외 ${v.todayTodos.length - 5}개 — 할 일 탭에서 볼 수 있어요</div>` : ''}` : '<div class="empty">오늘 할 일이 없어요</div>'}</section>
         <section class="card"><h2>오늘 일정 <small></small>${addBtn('add-event', '일정')}</h2>${v.todayEvents.length ? `<ul>${v.todayEvents.map((e) => evLi(e, false)).join('')}</ul>` : '<div class="empty">오늘은 일정이 없어요</div>'}</section>
         ${v.meals.length ? `<section class="card"><h2>오늘 급식</h2>${v.meals.map((m) => `<div class="muted">${esc(m.kind || '')}</div><div style="font-weight:700">${(m.dishes || []).map(esc).join(' · ')}</div>`).join('')}</section>` : ''}
         ${v.ddays.length ? `<section class="card"><h2>챙길 날</h2><ul>${v.ddays.map((d) => li(d.n === 0 ? 'D-DAY' : 'D-' + d.n, esc(d.t), `<span class="muted">${mmdd(d.date)}</span>`)).join('')}</ul></section>` : ''}`,
@@ -337,7 +337,14 @@
 
   function draw() {
     const root = $('#app'), tabs = $('#tabs');
-    const head = (sub) => `<header class="top"><img src="icon-192.png" alt=""><div><h1>딩동</h1><div class="sub">${esc(sub)}</div></div><button class="btn ghost sm" id="reload" ${S.busy ? 'disabled' : ''}>${S.busy ? '읽는 중…' : '새로고침'}</button></header>`;
+    const head = (school) => {
+      const n = new Date(), EN = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'], KO = ['일', '월', '화', '수', '목', '금', '토'];
+      const at = ls.get(KEY.at), mins = at ? Math.max(0, Math.round((Date.now() - new Date(at).getTime()) / 60000)) : null;
+      const ago = mins == null || isNaN(mins) ? '' : mins < 1 ? '방금 전' : mins < 60 ? mins + '분 전' : mins < 1440 ? Math.floor(mins / 60) + '시간 전' : Math.floor(mins / 1440) + '일 전';
+      const old = S.stale || mins == null || isNaN(mins) || mins > 30;
+      const pill = S.busy ? '읽는 중…' : ago ? '마지막으로 읽음 · ' + ago : '아직 안 읽었어요';
+      return `<header class="top"><div class="toprow"><span class="sync${old && !S.busy ? ' old' : ''}"><i></i>${esc(pill)}</span><button class="rl${S.busy ? ' spin' : ''}" id="reload" aria-label="지금 새로 읽기" ${S.busy ? 'disabled' : ''}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button></div><div class="dow">${EN[n.getDay()]}</div><h1>${n.getMonth() + 1}월 ${n.getDate()}일</h1><div class="sub">${KO[n.getDay()]}요일${school ? ' · ' + esc(school) : ''}</div></header>`;
+    };
     if (!S.payload) {
       tabs.hidden = true;
       if (S.busy) { root.innerHTML = head('') + `<div class="empty">${esc(S.status || '읽는 중…')}</div>`; return; }
@@ -347,7 +354,7 @@
     S.view = V.build(S.payload, new Date(), S.pending.map((p) => p.op));
     const v = S.view, sec = sections(v);
     tabs.hidden = false; tabs.querySelectorAll('button').forEach((b) => b.classList.toggle('on', b.dataset.tab === S.tab));
-    root.innerHTML = head(`${v.dateLabel}${v.school ? ' · ' + v.school : ''}`) + (S.status ? `<div class="notice">${esc(S.status)}</div>` : '') + (S.stale && !S.status ? `<div class="notice">마지막으로 읽은 화면이에요(${esc(when(ls.get(KEY.at)))}). 최신 내용은 위의 <b>새로고침</b>을 눌러 주세요.</div>` : '') + failedNotice() + pendingNotice() + (S.tab === 'more' ? more() : sec[S.tab] || sec.today);
+    root.innerHTML = head(v.school) + (S.status ? `<div class="notice">${esc(S.status)}</div>` : '') + (S.stale && !S.status ? `<div class="notice">마지막으로 읽은 화면이에요(${esc(when(ls.get(KEY.at)))}). 최신 내용은 위의 <b>새로고침</b>을 눌러 주세요.</div>` : '') + failedNotice() + pendingNotice() + (S.tab === 'more' ? more() : sec[S.tab] || sec.today);
     bind();
   }
   function bind() {
