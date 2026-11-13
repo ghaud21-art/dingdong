@@ -1,8 +1,8 @@
-version: 0.18.4
+version: 0.19.0
 files:
-  - url: https://github.com/ghaud21-art/dingdong/releases/download/v0.18.4/Dingdong-Setup-0.18.4.exe
-    sha512: hBiLDdOKt9INOzCEKzCgUbbbN8CW3r/v0lWeU+ZIrWyK7Vjfw5m/wSdOiRIDKEOIZPRLpLlY7YM8Jxtl7iG4nA==
-    size: 122809229
-path: https://github.com/ghaud21-art/dingdong/releases/download/v0.18.4/Dingdong-Setup-0.18.4.exe
-sha512: hBiLDdOKt9INOzCEKzCgUbbbN8CW3r/v0lWeU+ZIrWyK7Vjfw5m/wSdOiRIDKEOIZPRLpLlY7YM8Jxtl7iG4nA==
-releaseDate: '2026-11-11T05:12:22.374Z'
+  - url: https://github.com/ghaud21-art/dingdong/releases/download/v0.19.0/Dingdong-Setup-0.19.0.exe
+    sha512: i/qFk6aRjR++DVuvn/J7xcrFEDFuPBqgACI3YaGFwGyWMt2E9xp+UgGgxiVIM85DyWwBmccor9UmnlNJ7Rm+2A==
+    size: 122811954
+path: https://github.com/ghaud21-art/dingdong/releases/download/v0.19.0/Dingdong-Setup-0.19.0.exe
+sha512: i/qFk6aRjR++DVuvn/J7xcrFEDFuPBqgACI3YaGFwGyWMt2E9xp+UgGgxiVIM85DyWwBmccor9UmnlNJ7Rm+2A==
+releaseDate: '2026-11-13T06:14:34.225Z'
